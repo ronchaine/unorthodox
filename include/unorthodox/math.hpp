@@ -6,8 +6,7 @@ namespace unorthodox
     template <typename T> requires(std::is_arithmetic<T>::value)
     constexpr inline T abs(const T& value) noexcept
     {
-        if (value >= 0)
-            return value;
+        return value < 0 ? -value : value;
     }
 
     template <typename T> requires(std::is_floating_point<T>::value)
