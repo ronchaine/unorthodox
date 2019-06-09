@@ -5,3 +5,5 @@
 #include <unorthodox/math/fixed_point.hpp>
 #include <unorthodox/math.hpp>
 
+TEST_CASE("") {
+}

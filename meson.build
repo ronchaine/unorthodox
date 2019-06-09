@@ -22,7 +22,6 @@ endif
 unorthodox_include_path = include_directories('include')
 google_benchmark = subproject('benchmark')
 
-#benchmark_dependency = google_benchmark dependency(google_benchmark)
 benchmark_dependency = google_benchmark.get_variable('google_benchmark_dep')
 
 math_benchmark_sources = [
@@ -31,6 +30,10 @@ math_benchmark_sources = [
 
 math_test_sources = [
   'tests/math_basics.cpp'
+]
+
+colour_test_sources = [
+  'tests/colour.cpp'
 ]
 
 math_benchmark = executable('math_benchmarks',
@@ -44,3 +47,13 @@ math_test = executable('math_tests',
   include_directories : unorthodox_include_path,
   #  dependencies : test_dependency
 )
+
+colour_test = executable('colour_test',
+  colour_test_sources,
+  include_directories : unorthodox_include_path,
+)
+
+test('unorthodox mathematics test', math_test)
+test('unorthodox colour test', colour_test)
+
+

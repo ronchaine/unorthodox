@@ -11,7 +11,7 @@ namespace unorthodox
     }
 
     template <typename T> requires(std::is_floating_point<T>::value)
-    constexpr inline double modulo(const double a, const double b) noexcept
+    constexpr inline T modulo(const T a, const T b) noexcept
     {
         return (a - (int(a / b) * b));
     }
