@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <tuple>
 
+#include "math.hpp"
+
 namespace unorthodox
 {
     template <typename T> concept ColourFormat = requires(T t)
@@ -72,25 +74,11 @@ namespace unorthodox
         return rval;
     }
 
-    template <typename T>
-    constexpr inline T cabs(const T& value) noexcept
-    {
-        if (value == 0.0)
-            return value;
-
-        return (T{} > value) ? -value : value;
-    }
-
-    constexpr inline double cmod(const double a, const double b) noexcept
-    {
-        return (a - (int(a / b) * b));
-    }
-
     constexpr inline std::tuple<float, float, float> hsv_to_rgb(float hue, float saturation, float value)
     {
-        float chroma = value * saturation;
-        float intermediate = chroma * (1.0f - cabs(cmod(hue / 60.0, 2) -1.0f));
-        float major = value - chroma;
+        const float chroma = value * saturation;
+        const float intermediate = chroma * (1.0f - abs(modulo(hue / 60.0, 2.0) -1.0f));
+        const float major = value - chroma;
 
         float red = 0.0;
         float green = 0.0;
