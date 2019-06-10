@@ -40,10 +40,48 @@ namespace unorthodox
     }
 
     template <size_t Size> using int_of_size = detail::int_of_size_s<Size>;
-    template <typename T> using match_int_size = int_of_size<sizeof(T)>;
+    template <typename T> using match_int_size = typename int_of_size<sizeof(T)>::type;
 
     template <size_t Size> using uint_of_size = detail::uint_of_size_s<Size>;
-    template <typename T> using match_uint_size = uint_of_size<sizeof(T)>;
+    template <typename T> using match_uint_size = typename uint_of_size<sizeof(T)>::type;
+
+    template <typename T> requires(std::is_floating_point<T>::value)
+    constexpr inline T fract_iec559(T value)
+    {
+        union { T f; match_uint_size<T> i; } u{value};
+
+        const int e = (const int)(u.i >> detail::fp_info<T>::fraction_bits & detail::fp_info<T>::exponent_mask)
+                    - detail::fp_info<T>::exponent_magic;
+
+        if (e >= detail::fp_info<T>::fraction_bits)
+        {
+            if (e == (detail::fp_info<T>::exponent_magic + 1) && u.i << (detail::fp_info<T>::exponent_bits + 1))
+                return value;
+
+            u.i &= (decltype(u.i){1} << (sizeof(T) * 8 - 1));
+            return u.f;
+        }
+        if (e < 0)
+        {
+            return value;
+        }
+
+        match_uint_size<T> mask;
+
+        if constexpr(sizeof(T) == 8)
+            mask = -1ULL >> 12 >> e;
+        else
+            mask = 0x007fffff >> e;
+
+        if ((u.i & mask) == 0)
+        {
+            u.i &= (1ULL << (sizeof(T) * 8 - 1));
+            return u.f;
+        }
+
+        u.i &= ~mask;
+        return value - u.f;
+    }
 
     template <typename T> requires(std::is_floating_point<T>::value)
     constexpr inline T round_iec559(T value)
@@ -60,29 +98,18 @@ namespace unorthodox
         if (e < detail::fp_info<T>::exponent_magic - 1)
             return 0 * u.f;
 
-//        T fract = fractii;
+        T fract = fract_iec559(value);
+
+        if (fract >= 0.5)
+        {
+            value = value - fract + 1.0;
+        } else {
+            value = value - fract;
+        }
 
         if (u.i >= detail::fp_info<T>::total_bits_minus_one)
             value = -value;
         return fract;
-/*
-double round(double x)
-{
-	double_t y;
-
-	y = x + toint - toint - x;
-	if (y > 0.5)
-		y = y + x - 1;
-	else if (y <= -0.5)
-		y = y + x + 1;
-	else
-		y = y + x;
-	if (u.i >> 63) (d)
-	if (u.i >> 31) (f)
-		y = -y;
-	return y;
-}
-*/
     }
     
     template <typename T> requires(std::is_arithmetic<T>::value)
@@ -116,7 +143,7 @@ double round(double x)
     {
         if constexpr (std::is_floating_point<T>::value)
         {
-            return (a - (int(a / b) * b));
+            return (a - (round(a / b) * b));
         } else {
             return a % b;
         }
