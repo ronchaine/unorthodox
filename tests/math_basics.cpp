@@ -11,7 +11,7 @@
 
 TEST_CASE("Breaking fractional part") {
     REQUIRE(unorthodox::fract_iec559(0.25) == doctest::Approx(0.25));
-    REQUIRE(unorthodox::fract_iec559(0.5) == doctest::Approx(0.5));
+    REQUIRE(unorthodox::fract_iec559(0.5) == 0.5);
     REQUIRE(unorthodox::fract_iec559(0.7) == doctest::Approx(0.7));
     REQUIRE(unorthodox::fract_iec559(0.25) == doctest::Approx(0.25));
     REQUIRE(unorthodox::fract_iec559(-0.5) == doctest::Approx(-0.5));
@@ -23,17 +23,28 @@ TEST_CASE("Breaking fractional part") {
     REQUIRE(unorthodox::fract_iec559(1.25) == doctest::Approx(0.25));
     REQUIRE(unorthodox::fract_iec559(-44.5) == doctest::Approx(-0.5));
     REQUIRE(unorthodox::fract_iec559(-9.7) == doctest::Approx(-0.7));
+    
+    REQUIRE(unorthodox::fract_iec559(1.0) == doctest::Approx(0.0));
+    REQUIRE(unorthodox::fract_iec559(-63.0) == doctest::Approx(0.0));
 }
 TEST_CASE("Rounding") {
     SUBCASE("positive numbers") {
-        REQUIRE(unorthodox::round(0.25) == doctest::Approx(0));
-        REQUIRE(unorthodox::round(0.5) == doctest::Approx(1));
-        REQUIRE(unorthodox::round(0.75) == doctest::Approx(1));
+        REQUIRE(unorthodox::round(0.25) == doctest::Approx(0.0));
+        REQUIRE(unorthodox::round(0.5) == doctest::Approx(1.0));
+        REQUIRE(unorthodox::round(0.75) == doctest::Approx(1.0));
+        
+        REQUIRE(unorthodox::round(0.25f) == doctest::Approx(0.0f));
+        REQUIRE(unorthodox::round(0.5f) == doctest::Approx(1.0f));
+        REQUIRE(unorthodox::round(0.75f) == doctest::Approx(1.0f));
     }
     SUBCASE("negative numbers") {
         REQUIRE(unorthodox::round(-0.25) == doctest::Approx(0));
         REQUIRE(unorthodox::round(-0.5) == doctest::Approx(-1));
         REQUIRE(unorthodox::round(-0.75) == doctest::Approx(-1));
+        
+        REQUIRE(unorthodox::round(-0.25f) == doctest::Approx(0.0f));
+        REQUIRE(unorthodox::round(-0.5f) == doctest::Approx(-1.0f));
+        REQUIRE(unorthodox::round(-0.75f) == doctest::Approx(-1.0f));
     }
 }
 

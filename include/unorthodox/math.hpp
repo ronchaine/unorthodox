@@ -3,6 +3,8 @@
 
 #include <limits>
 
+#include <iostream>
+
 namespace unorthodox
 {
     namespace detail
@@ -87,18 +89,19 @@ namespace unorthodox
     constexpr inline T round_iec559(T value)
     {
         union { T f; match_uint_size<T> i; } u{value};
-        int e = (u.i >> detail::fp_info<T>::fraction_bits) & detail::fp_info<T>::exponent_mask;
+        const int e = (u.i >> detail::fp_info<T>::fraction_bits) & detail::fp_info<T>::exponent_mask;
 
         if (e >= detail::fp_info<T>::exponent_magic + detail::fp_info<T>::fraction_bits)
             return value;
 
-        if (u.i >= detail::fp_info<T>::total_bits_minus_one)
+        if (u.i & (1ULL << detail::fp_info<T>::total_bits_minus_one))
             value = -value;
 
         if (e < detail::fp_info<T>::exponent_magic - 1)
             return 0 * u.f;
 
         T fract = fract_iec559(value);
+        std::cout << " -- " << fract << "\n";
 
         if (fract >= 0.5)
         {
@@ -107,9 +110,10 @@ namespace unorthodox
             value = value - fract;
         }
 
-        if (u.i >= detail::fp_info<T>::total_bits_minus_one)
+        if (u.i & (1ULL << detail::fp_info<T>::total_bits_minus_one))
             value = -value;
-        return fract;
+
+        return value;
     }
     
     template <typename T> requires(std::is_arithmetic<T>::value)
