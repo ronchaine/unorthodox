@@ -33,9 +33,9 @@ Roadmap
   - [ ] Triangle
   - [ ] Quad
   - [ ] Circle
-  - [ ] Sphere
+  - [ ] Sphere
 - [ ] Collisions
-- [ ] Triangulation
+- [ ] Triangulation
 
 ### Video IO
 - [ ] Basic video target
@@ -62,10 +62,10 @@ Later
 
 ### Video IO
 - [ ] Basic event system
-  - [ ] Touch
+  - [ ] Touch
   - [ ] Stylus
 
 ### Physical units
 - [ ] Length
-- [ ] Time
-  - [ ] Integrate std::chrono
+- [ ] Time
+  - [ ] Integrate std::chrono
