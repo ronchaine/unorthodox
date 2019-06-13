@@ -54,11 +54,11 @@ Later
   - [ ] Basic support for CIE colourspaces
 
 ### Geometry
-- [ ] Simple shapes
+- [ ] Simple shapes
   - [ ] Polygon
     - [ ] Convex
-    - [ ] Concave
-- [ ] Compond shapes
+    - [ ] Concave
+- [ ] Compond shapes
 
 ### Video IO
 - [ ] Basic event system
