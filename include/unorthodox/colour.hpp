@@ -3,13 +3,24 @@
 
 #include <cstdint>
 #include <tuple>
+#include <string>
 
 #include "math.hpp"
 
 namespace unorthodox
 {
+    struct colourspace_type_grayscale {};
+    struct colourspace_type_rgb_tag {};
+    struct colourspace_type_cie_tag {};
+    struct colourspace_type_luma_plus_chroma_tag {};
+    struct colourspace_type_cylinderical_tag {};
+    struct colourspace_type_cmyk_tag {};
+
     template <typename T> concept ColourFormat = requires(T t)
     {
+        // how to interpret the components
+        typename T::colourspace_type;
+
         // needs to define what type each component is stored as
         typename T::component_type;
 
@@ -19,6 +30,7 @@ namespace unorthodox
 
     struct format_rgba8
     {
+        using colourspace_type = colourspace_type_rgb_tag;
         using component_type = uint8_t;
 
         constexpr static int components = 4;
@@ -39,7 +51,11 @@ namespace unorthodox
                                               typename Format::component_type,
                                               typename Format::component_type);
 
-            constexpr static colour_type hsv(float, float, float);
+            constexpr static colour_type hsv(double, double, double);
+
+            // Ways to read the value
+            constexpr uint32_t      as_rgba_value() const;
+            constexpr std::string   as_ansi_code() const;
 
         private:
             constexpr colour_type() noexcept = default;
@@ -48,6 +64,11 @@ namespace unorthodox
     };
 
     using colour = colour_type<format_rgba8>;
+
+    constexpr inline std::tuple<double, double, double> rgb_to_hsv(double red, double green, double blue);
+    constexpr inline std::tuple<double, double, double> hsv_to_rgb(double hue, double saturation, double value);
+
+    // Implementation zone below
 
     template <ColourFormat Format>
     constexpr colour_type<Format> colour_type<Format>::rgba(uint32_t in_value)
@@ -74,15 +95,29 @@ namespace unorthodox
         return rval;
     }
 
-    constexpr inline std::tuple<float, float, float> hsv_to_rgb(float hue, float saturation, float value)
+    template <ColourFormat Format>
+    constexpr colour_type<Format> colour_type<Format>::hsv(double hue, double saturation, double value)
     {
-        const float chroma = value * saturation;
-        const float intermediate = chroma * (1.0f - abs(modulo(hue / 60.0, 2.0) -1.0f));
-        const float major = value - chroma;
+        colour_type rval;
+        const auto [red, green, blue] = hsv_to_rgb(hue, saturation, value);
 
-        float red = 0.0;
-        float green = 0.0;
-        float blue = 0.0;
+        rval.component[Format::red_component] = 255 * red;
+        rval.component[Format::green_component] = 255 * green;
+        rval.component[Format::blue_component] = 255 * blue;
+        rval.component[Format::alpha_component] = 255;
+
+        return rval;
+    }
+
+    constexpr inline std::tuple<double, double, double> hsv_to_rgb(double hue, double saturation, double value)
+    {
+        const double chroma = value * saturation;
+        const double intermediate = chroma * (1.0f - abs(modulo(hue / 60.0, 2.0) -1.0f));
+        const double major = value - chroma;
+
+        double red = 0.0;
+        double green = 0.0;
+        double blue = 0.0;
 
         if (hue >= 0.0 && hue < 60.0)
         {
@@ -124,27 +159,13 @@ namespace unorthodox
         return std::tie(red, green, blue);
     }
 
-    constexpr inline std::tuple<float, float, float> rgb_to_hsv(float red, float green, float blue)
+    constexpr inline std::tuple<double, double, double> rgb_to_hsv(double red, double green, double blue)
     {
-        float hue = red;
-        float saturation = green;
-        float value = blue;
+        double hue = red;
+        double saturation = green;
+        double value = blue;
 
         return std::tie(hue, saturation, value);
-    }
-
-    template <ColourFormat Format>
-    constexpr colour_type<Format> colour_type<Format>::hsv(float hue, float saturation, float value)
-    {
-        colour_type rval;
-        const auto [red, green, blue] = hsv_to_rgb(hue, saturation, value);
-
-        rval.component[Format::red_component] = 255 * red;
-        rval.component[Format::green_component] = 255 * green;
-        rval.component[Format::blue_component] = 255 * blue;
-        rval.component[Format::alpha_component] = 255;
-
-        return rval;
     }
 }
 

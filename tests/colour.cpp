@@ -65,12 +65,6 @@ TEST_CASE("HSV to RGB conversions") {
             CHECK(green == 0.5f);
             CHECK(blue == 0.25f);
         }
-        SUBCASE("") {
-            auto [red, green, blue] = unorthodox::hsv_to_rgb(150, 1.0, 0.25);
-            CHECK(red == 0.0f);
-            CHECK(green == 0.25f);
-            CHECK(blue == 0.125f);
-        }
     }
     SUBCASE("Hue 120°-360°") {
         SUBCASE("") {
@@ -79,14 +73,26 @@ TEST_CASE("HSV to RGB conversions") {
             uint8_t igreen = green * 255;
             uint8_t iblue = blue * 255;
             CHECK(ired == 91);
-            CHECK(igreen == 166);
-            CHECK(iblue == 99);
+            CHECK(igreen == 165);
+            CHECK(iblue == 98);
         }
         SUBCASE("") {
-            auto [red, green, blue] = unorthodox::hsv_to_rgb(60, 0.5, 0.5);
-            CHECK(red == 0.5f);
-            CHECK(green == 0.5f);
-            CHECK(blue == 0.25f);
+            auto [red, green, blue] = unorthodox::hsv_to_rgb(150, 1.0, 0.25);
+            CHECK(red == 0.0f);
+            CHECK(green == 0.25f);
+            CHECK(blue == 0.125f);
+        }
+        SUBCASE("") {
+            auto [red, green, blue] = unorthodox::hsv_to_rgb(210, 0.5, 0.5);
+            CHECK(red == 0.25f);
+            CHECK(green == 0.375f);
+            CHECK(blue == 0.5f);
+        }
+        SUBCASE("") {
+            auto [red, green, blue] = unorthodox::hsv_to_rgb(280, 0.5, 0.5);
+            CHECK(red == doctest::Approx(0.41666666f));
+            CHECK(green == 0.25f);
+            CHECK(blue == 0.5f);
         }
     }
 }

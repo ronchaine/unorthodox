@@ -8,6 +8,8 @@ project(
   ],
 )
 
+add_project_arguments(['-Wall', '-Wextra', '-Werror'], language : 'cpp')
+
 compiler = meson.get_compiler('cpp').get_id()
 
 if compiler == 'clang'

@@ -29,14 +29,11 @@ namespace unorthodox
         struct fp_info
         {
             static_assert(sizeof(T) == 8 || sizeof(T) == 4, "Only supports iec559 float/double types");
-            using type = T;
 
             constexpr static int fraction_bits = sizeof(T) == 8 ? 52 : 23;
             constexpr static int exponent_bits = sizeof(T) == 8 ? 11 : 8;
             constexpr static int exponent_mask = sizeof(T) == 8 ? 0x7ff : 0xff;
-//            constexpr static int exponent_magic = sizeof(T) == 8 ? 0x3ff + 52 : 0x7f + 23;
             constexpr static int exponent_magic = sizeof(T) == 8 ? 0x3ff: 0x7f;
-
             constexpr static int total_bits_minus_one = sizeof(T) * 8 - 1;
         };
     }
