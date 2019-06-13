@@ -1,11 +1,10 @@
 Roadmap
 =======
 
-1.0
+0.1
 ---
 
 ### Mathematics
-#### Functions required for constexpring 
 
 - [x] `var_in_range`
 - [x] `fract_iec559`
@@ -36,19 +35,13 @@ Roadmap
 - [ ] Collisions
 - [ ] Triangulation
 
-### Video IO
-- [ ] Basic video target
-  - [ ] GLFW target
-  - [ ] File target
-- [ ] Basic event system
-  - [ ] Keyboard
-  - [ ] Mouse
-  
 Later
 -----
+
 ### Colour
 - [ ] Conversion functions
   - [ ] Wavelength to RGB
+  - [ ] Temperature to RGB
 - [ ] Colour spaces
   - [ ] Basic support for CIE colourspaces
 
@@ -59,12 +52,34 @@ Later
     - [ ] Concave
 - [ ] Compond shapes
 
-### Video IO
-- [ ] Basic event system
-  - [ ] Touch
-  - [ ] Stylus
-
 ### Physical units
 - [ ] Length
 - [ ] Time
   - [ ] Integrate std::chrono
+
+### Event system
+- [ ] Window events from Video IO
+- [ ] Network events
+- [ ] Timer events
+- [ ] Filesystem events
+- [ ] Variable change events
+
+### Video IO
+- [ ] Basic video target
+  - [ ] GLFW target
+  - [ ] File target
+- [ ] Basic event system
+  - [ ] Keyboard
+  - [ ] Mouse
+  - [ ] Touch
+  - [ ] Stylus
+  
+### Networking
+- [ ] UDP/TCP sockets
+  - [ ] async callback API
+  - [ ] sync API
+- [ ] SSL socket wrapper
+  - [ ] Certificate handling
+    - [ ] Linux / BSD
+    - [ ] Windows
+    - [ ] OS X
