@@ -64,9 +64,7 @@ namespace unorthodox
             return u.f;
         }
         if (e < 0)
-        {
             return value;
-        }
 
         match_uint_size<T> mask;
 
@@ -101,14 +99,11 @@ namespace unorthodox
             return 0 * u.f;
 
         T fract = fract_iec559(value);
-        std::cout << " -- " << fract << "\n";
 
         if (fract >= 0.5)
-        {
             value = value - fract + 1.0;
-        } else {
+        else
             value = value - fract;
-        }
 
         if (u.i & (1ULL << detail::fp_info<T>::total_bits_minus_one))
             value = -value;
@@ -147,7 +142,27 @@ namespace unorthodox
     {
         if constexpr (std::is_floating_point<T>::value)
         {
-            return (a - (round(a / b) * b));
+            T rval = (a - (round(a / b) * b));
+            if (b > 0)
+                return rval < 0 ? rval + b : rval;
+            return rval < 0 ? rval - b : rval;
+        } else {
+            return a % b;
+        }
+    }
+    
+    template <typename T> requires(std::is_arithmetic<T>::value)
+    constexpr inline T remainder(const T a, const T b) noexcept
+    {
+        if constexpr (std::is_floating_point<T>::value)
+        {
+            T rval = (a - (round(a / b) * b));
+            if (a > 0)
+            {
+                return rval < 0 ? rval + abs(b) : rval;
+            } else {
+                return rval > 0 ? rval - abs(b) : rval;
+            }
         } else {
             return a % b;
         }

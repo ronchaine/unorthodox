@@ -60,15 +60,36 @@ TEST_CASE("Absolute values") {
     REQUIRE(unorthodox::abs(-std::numeric_limits<float>::infinity()) == std::numeric_limits<float>::infinity());
 }
 
-TEST_CASE("Modulo arithmetics") {
-    REQUIRE(unorthodox::modulo(1, 1) == 0);
-    REQUIRE(unorthodox::modulo(125, 8) == 5);
+TEST_CASE("Modulo and remainder") {
+    SUBCASE("Modulo") {
+        REQUIRE(unorthodox::modulo(1, 1) == 0);
+        REQUIRE(unorthodox::modulo(125, 8) == 5);
 
-    REQUIRE(unorthodox::modulo(1.0, 1.0) == 0.0);
-    REQUIRE(unorthodox::modulo(125.0, 8.0) == 5.0);
+        REQUIRE(unorthodox::modulo(1.0, 1.0) == 0.0);
+        REQUIRE(unorthodox::modulo(125.0, 8.0) == doctest::Approx(std::fmod(125.0, 8.0)));
 
-    // positive should be exact
-    REQUIRE(unorthodox::modulo(15.6, 8.52) == doctest::Approx(std::fmod(15.6, 8.52)));
+        // positive should be exact
+        REQUIRE(unorthodox::modulo(15.6, 8.52) == 7.08);
 
-    REQUIRE(std::fabs(unorthodox::modulo(-42.1, 7.52) == doctest::Approx(std::fmod(-42.1, 7.52))));
+        REQUIRE(unorthodox::modulo(42.1, 7.52)   == doctest::Approx(4.5));
+        REQUIRE(unorthodox::modulo(-42.1, 7.52)  == doctest::Approx(3.02));
+        REQUIRE(unorthodox::modulo(-42.1, -7.52) == doctest::Approx(3.02));
+        REQUIRE(unorthodox::modulo(42.1, -7.52)  == doctest::Approx(4.5));
+    }
+    
+    SUBCASE("Remainder") {
+        REQUIRE(unorthodox::remainder(1, 1) == 0);
+        REQUIRE(unorthodox::remainder(125, 8) == 5);
+
+        REQUIRE(unorthodox::remainder(1.0, 1.0) == 0.0);
+        REQUIRE(unorthodox::remainder(125.0, 8.0) == doctest::Approx(std::fmod(125.0, 8.0)));
+
+        // positive should be exact
+        REQUIRE(unorthodox::remainder(15.6, 8.52) == 7.08);
+
+        REQUIRE(unorthodox::remainder(42.1, 7.52) == doctest::Approx(std::fmod(42.1, 7.52)));
+        REQUIRE(unorthodox::remainder(-42.1, 7.52) == doctest::Approx(std::fmod(-42.1, 7.52)));
+        REQUIRE(unorthodox::remainder(-42.1, -7.52) == doctest::Approx(std::fmod(-42.1, -7.52)));
+        REQUIRE(unorthodox::remainder(42.1, -7.52) == doctest::Approx(std::fmod(42.1, -7.52)));
+    }
 }
