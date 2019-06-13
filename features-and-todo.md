@@ -19,9 +19,9 @@ Roadmap
 - [x] `maximum`
 
 ### Colour
-- [ ] Conversion functions
+- [x] Conversion functions
   - [x] HSV to RGB
-  - [ ] RGB to HSV
+  - [x] RGB to HSV
 - [ ] Colour spaces
   - [ ] Basic support for RGB colourspaces
   - [ ] Basic support for greyscale colourspaces

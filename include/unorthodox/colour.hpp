@@ -9,8 +9,8 @@
 
 namespace unorthodox
 {
-    //! Tag for grayscale colourspace
-    struct colourspace_type_grayscale {};
+    //! Tag for greyscale colourspace
+    struct colourspace_type_greyscale {};
     
     //! Tag for RGB colourspaces (RGBA, BGRA, GRB...)
     /*!
@@ -87,11 +87,18 @@ namespace unorthodox
     using colour = colour_type<format_rgba8>;
 
     constexpr inline std::tuple<double, double, double> rgb_to_hsv(double red, double green, double blue);
+//    [[ expects: var_in_range(red,         0.0, 1.0)   ]]
+//    [[ expects: var_in_range(green,       0.0, 1.0)   ]]
+//    [[ expects: var_in_range(blue,        0.0, 1.0)   ]]
+
     constexpr inline std::tuple<double, double, double> hsv_to_rgb(double hue, double saturation, double value);
+//    [[ expects: var_in_range(hue,         0.0, 360.0) ]]
+//    [[ expects: var_in_range(saturation,  0.0, 1.0)   ]]
+//    [[ expects: var_in_range(value,       0.0, 1.0)   ]]
 
     // Implementation zone below
 
-    //! Constructor, from RGBA unsigned int (e.g. 0xff0000ff)
+    //! Constructor for colour_type, from RGBA unsigned int (e.g. 0xff0000ff)
     /*!
      *  \param in_value     input value as uint32_t
      */
@@ -141,8 +148,16 @@ namespace unorthodox
         return rval;
     }
 
+    //! Convert HSV triple to RGB tuple
+    /*!
+     */
     constexpr inline std::tuple<double, double, double> hsv_to_rgb(double hue, double saturation, double value)
     {
+        // TODO: Remove these and uncomment the contracts in the declarations
+        assert(var_in_range(hue, 0.0, 360.0));
+        assert(var_in_range(saturation, 0.0, 1.0));
+        assert(var_in_range(value, 0.0, 1.0));
+
         const double chroma = value * saturation;
         const double intermediate = chroma * (1.0f - abs(modulo(hue / 60.0, 2.0) -1.0f));
         const double major = value - chroma;
@@ -191,13 +206,56 @@ namespace unorthodox
         return std::tie(red, green, blue);
     }
 
-    constexpr inline std::tuple<double, double, double> rgb_to_hsv(double red, double green, double blue)
+    //! Convert RGB triple to HSV tuple
+    /*!
+     */
+    // TODO: Make the switch from asserts to contracts
+    constexpr inline std::tuple<double, double, double> rgb_to_hsv(const double red,
+                                                                   const double green,
+                                                                   const double blue)
     {
-        double hue = red;
-        double saturation = green;
-        double value = blue;
+        assert(red >= 0.0 && red <= 1.0);
+        assert(green >= 0.0 && green <= 1.0);
+        assert(blue >= 0.0 && blue <= 1.0);
 
-        return std::tie(hue, saturation, value);
+        
+        double hue = std::numeric_limits<double>::quiet_NaN();
+        double saturation = 0.0;
+
+        const double min = minimum(red, green, blue);
+        const double max = maximum(red, green, blue);
+        const double delta = max - min;
+
+        if ((max == 0.0) || (delta < 0.00001))
+            return std::tie(hue, saturation, max);
+
+        saturation = delta / max;
+
+        if (red == max)
+            hue = (green - blue) / delta;
+        else if (green == max)
+            hue = 2.0 + (blue - red) / delta;
+        else
+            hue = 4.0 + (red - green) / delta;
+
+        hue *= 60.0;
+
+        if (hue < 0.0)
+            hue += 360.0;
+
+        return std::tie(hue, saturation, max);
+    }
+
+    template <typename T> requires(std::is_integral<T>::value)
+    constexpr inline std::tuple<double, double, double> rgb_to_hsv(const T red,
+                                                                   const T green,
+                                                                   const T blue)
+    {
+        return rgb_to_hsv(
+            (red / static_cast<double>(std::numeric_limits<T>::max))
+            (green / static_cast<double>(std::numeric_limits<T>::max))
+            (blue / static_cast<double>(std::numeric_limits<T>::max))
+        );
     }
 }
 

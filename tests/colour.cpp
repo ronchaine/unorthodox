@@ -104,4 +104,46 @@ TEST_CASE("HSV to RGB conversions") {
 }
 
 TEST_CASE("RGB to HSV conversions") {
+    {
+        auto [hue, sat, val] = unorthodox::rgb_to_hsv(0.0, 0.0, 0.0);
+        CHECK(isnan(hue));
+        CHECK(sat == 0.0);
+        CHECK(val == 0.0);
+    }
+    {
+        auto [hue, sat, val] = unorthodox::rgb_to_hsv(1.0, 1.0, 1.0);
+        CHECK(isnan(hue));
+        CHECK(sat == 0.0);
+        CHECK(val == 1.0);
+    }
+    {
+        auto [hue, sat, val] = unorthodox::rgb_to_hsv(1.0, 0.0, 0.0);
+        CHECK(hue == 0.0);
+        CHECK(sat == 1.0);
+        CHECK(val == 1.0);
+    }
+    {
+        auto [hue, sat, val] = unorthodox::rgb_to_hsv(0.0, 1.0, 0.0);
+        CHECK(hue == 120.0);
+        CHECK(sat == 1.0);
+        CHECK(val == 1.0);
+    }
+    {
+        auto [hue, sat, val] = unorthodox::rgb_to_hsv(0.0, 0.0, 1.0);
+        CHECK(hue == 240.0);
+        CHECK(sat == 1.0);
+        CHECK(val == 1.0);
+    }
+    {
+        auto [hue, sat, val] = unorthodox::rgb_to_hsv(0.0, 0.5, 1.0);
+        CHECK(hue == 210.0);
+        CHECK(sat == 1.0);
+        CHECK(val == 1.0);
+    }
+    {
+        auto [hue, sat, val] = unorthodox::rgb_to_hsv(0.1, 0.5, 0.8);
+        CHECK(hue == doctest::Approx(205.714));
+        CHECK(sat == 0.875);
+        CHECK(val == 0.8);
+    }
 }
