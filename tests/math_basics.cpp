@@ -7,7 +7,23 @@
 #include <cmath>
 #include <iostream>
 
-//constexpr static double FLOATING_POINT_TOLERANCE = 2.0e-14;
+TEST_CASE("Minimum and maximum") {
+    SUBCASE("Minimum") {
+        REQUIRE(unorthodox::minimum(0, 2, 6) == 0);
+        REQUIRE(unorthodox::minimum(7.0, -52.1, 60.0) == -52.1);
+        REQUIRE(unorthodox::minimum(-1, -532, -2000) == -2000);
+        REQUIRE(unorthodox::minimum(-1.0f, -532.0f, -2000.0f) == -2000.0f);
+        REQUIRE(unorthodox::minimum(-std::numeric_limits<double>::infinity(), 5.0, 22.2) == -std::numeric_limits<double>::infinity());
+
+    }
+    SUBCASE("Maximum") {
+        REQUIRE(unorthodox::maximum(0, 2, 6) == 6);
+        REQUIRE(unorthodox::maximum(7.0, -52.1, 60.0) == 60.0);
+        REQUIRE(unorthodox::maximum(-1, -532, -2000) == -1);
+        REQUIRE(unorthodox::maximum(-1.0f, -532.0f, -2000.0f) == -1.0f);
+        REQUIRE(unorthodox::maximum(std::numeric_limits<double>::infinity(), 5.0, 22.2) == std::numeric_limits<double>::infinity());
+    }
+}
 
 TEST_CASE("Breaking fractional part") {
     REQUIRE(unorthodox::fract_iec559(0.25) == doctest::Approx(0.25));
@@ -27,6 +43,7 @@ TEST_CASE("Breaking fractional part") {
     REQUIRE(unorthodox::fract_iec559(1.0) == doctest::Approx(0.0));
     REQUIRE(unorthodox::fract_iec559(-63.0) == doctest::Approx(0.0));
 }
+
 TEST_CASE("Rounding") {
     SUBCASE("positive numbers") {
         REQUIRE(unorthodox::round(0.25) == doctest::Approx(0.0));

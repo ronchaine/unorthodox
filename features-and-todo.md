@@ -14,6 +14,8 @@ Roadmap
 - [x] `abs`
 - [x] `modulo`
 - [x] `remainder`
+- [x] `minimum`
+- [x] `maximum`
 
 #### Dependencies
 

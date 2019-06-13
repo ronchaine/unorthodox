@@ -42,6 +42,24 @@ namespace unorthodox
     template <size_t Size> using uint_of_size = detail::uint_of_size_s<Size>;
     template <typename T> using match_uint_size = typename uint_of_size<sizeof(T)>::type;
 
+    template <typename T, typename... Ts> requires(std::is_arithmetic<T>::value)
+    constexpr inline T minimum(T value, T value2, Ts... rest) noexcept
+    {
+        if constexpr (sizeof...(rest) == 0)
+            return value < value2 ? value : value2;
+        else
+            return value < value2 ? minimum(value, rest...) : minimum(value2, rest...);
+    }
+
+    template <typename T, typename... Ts> requires(std::is_arithmetic<T>::value)
+    constexpr inline T maximum(T value, T value2, Ts... rest) noexcept
+    {
+        if constexpr (sizeof...(rest) == 0)
+            return value > value2 ? value : value2;
+        else
+            return value > value2 ? maximum(value, rest...) : maximum(value2, rest...);
+    }
+
     template <typename T> requires(std::is_floating_point<T>::value)
     constexpr inline T fract_iec559(T value)
     {
