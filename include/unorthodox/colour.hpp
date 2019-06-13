@@ -9,11 +9,32 @@
 
 namespace unorthodox
 {
+    //! Tag for grayscale colourspace
     struct colourspace_type_grayscale {};
+    
+    //! Tag for RGB colourspaces (RGBA, BGRA, GRB...)
+    /*!
+     *  Types with RGB colourspace tag can have a components value of 3 or 4,
+     *  depending on whether or not they have an alpha channel
+     *
+     *  Types with RGB colourspace tag expect to have at least
+     *  red_component, green_component and blue_component values,
+     *  that designate internal index in their storage
+     *
+     *  They will also have alpha_component if components == 4
+     */
     struct colourspace_type_rgb_tag {};
+    
+    //! Tag for CIE colourspaces
     struct colourspace_type_cie_tag {};
+    
+    //! Tag for luma plus chroma colourspaces
     struct colourspace_type_luma_plus_chroma_tag {};
+    
+    //! Tag for cylinderical colourspaces (HSV, HSL...)
     struct colourspace_type_cylinderical_tag {};
+    
+    //! Tag for CMYK colourspace
     struct colourspace_type_cmyk_tag {};
 
     template <typename T> concept ColourFormat = requires(T t)
@@ -70,29 +91,40 @@ namespace unorthodox
 
     // Implementation zone below
 
+    //! Constructor, from RGBA unsigned int (e.g. 0xff0000ff)
+    /*!
+     *  \param in_value     input value as uint32_t
+     */
     template <ColourFormat Format>
     constexpr colour_type<Format> colour_type<Format>::rgba(uint32_t in_value)
     {
-        colour_type rval;
-        rval.component[Format::red_component]   = (in_value & 0xff000000) >> 24;
-        rval.component[Format::green_component] = (in_value & 0x00ff0000) >> 16;
-        rval.component[Format::blue_component]  = (in_value & 0x0000ff00) >> 8;
-        rval.component[Format::alpha_component] = (in_value & 0x000000ff);
-        return rval;
+        if constexpr (std::is_same_v<Format::colourspace_type, colourspace_type_rgb_tag>)
+        {
+            colour_type rval;
+            rval.component[Format::red_component]   = (in_value & 0xff000000) >> 24;
+            rval.component[Format::green_component] = (in_value & 0x00ff0000) >> 16;
+            rval.component[Format::blue_component]  = (in_value & 0x0000ff00) >> 8;
+            if constexpr (Format::components == 4)
+                rval.component[Format::alpha_component] = (in_value & 0x000000ff);
+            return rval;
+        }
     }
-    
+
     template <ColourFormat Format>
     constexpr colour_type<Format> colour_type<Format>::rgba(typename Format::component_type red,
                                                             typename Format::component_type green,
                                                             typename Format::component_type blue,
                                                             typename Format::component_type alpha)
     {
-        colour_type rval;
-        rval.component[Format::red_component]   = red;
-        rval.component[Format::green_component] = green;
-        rval.component[Format::blue_component]  = blue;
-        rval.component[Format::alpha_component] = alpha;
-        return rval;
+        if constexpr (std::is_same_v<Format::colourspace_type, colourspace_type_rgb_tag>)
+        {
+            colour_type rval;
+            rval.component[Format::red_component]   = red;
+            rval.component[Format::green_component] = green;
+            rval.component[Format::blue_component]  = blue;
+            rval.component[Format::alpha_component] = alpha;
+            return rval;
+        }
     }
 
     template <ColourFormat Format>

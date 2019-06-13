@@ -102,3 +102,6 @@ TEST_CASE("HSV to RGB conversions") {
         }
     }
 }
+
+TEST_CASE("RGB to HSV conversions") {
+}
