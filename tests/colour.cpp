@@ -94,5 +94,11 @@ TEST_CASE("HSV to RGB conversions") {
             CHECK(green == 0.25f);
             CHECK(blue == 0.5f);
         }
+        SUBCASE("") {
+            auto [red, green, blue] = unorthodox::hsv_to_rgb(333, 0.5, 0.5);
+            CHECK(red == 0.5f);
+            CHECK(green == 0.25f);
+            CHECK(blue == doctest::Approx(0.3625));
+        }
     }
 }
