@@ -7,6 +7,7 @@ Roadmap
 ### Mathematics
 #### Functions required for constexpring 
 
+- [x] `var_in_range`
 - [x] `fract_iec559`
 - [x] `round_iec559`
 - [ ] `round_icast` (missing tests)
@@ -16,10 +17,6 @@ Roadmap
 - [x] `remainder`
 - [x] `minimum`
 - [x] `maximum`
-
-#### Dependencies
-
-- stl
 
 ### Colour
 - [ ] Conversion functions

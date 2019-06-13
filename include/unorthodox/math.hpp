@@ -60,6 +60,12 @@ namespace unorthodox
             return value > value2 ? maximum(value, rest...) : maximum(value2, rest...);
     }
 
+    template <typename T> requires(std::is_arithmetic<T>::value)
+    constexpr inline bool var_in_range(T variable, T min, T max)
+    {
+        return variable >= min && variable <= max;
+    }
+
     template <typename T> requires(std::is_floating_point<T>::value)
     constexpr inline T fract_iec559(T value)
     {
