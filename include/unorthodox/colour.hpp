@@ -62,6 +62,18 @@ namespace unorthodox
         constexpr static size_t alpha_component = 3;
     };
 
+    struct format_rgb8
+    {
+        using colourspace_type = colourspace_type_rgb_tag;
+        using component_type = uint8_t;
+
+        constexpr static int components = 3;
+
+        constexpr static size_t red_component   = 0;
+        constexpr static size_t green_component = 1;
+        constexpr static size_t blue_component  = 2;
+    };
+
     template <ColourFormat Format>
     class colour_type
     {
@@ -105,7 +117,7 @@ namespace unorthodox
     template <ColourFormat Format>
     constexpr colour_type<Format> colour_type<Format>::rgba(uint32_t in_value)
     {
-        if constexpr (std::is_same_v<Format::colourspace_type, colourspace_type_rgb_tag>)
+        if constexpr (std::is_same_v<typename Format::colourspace_type, colourspace_type_rgb_tag>)
         {
             colour_type rval;
             rval.component[Format::red_component]   = (in_value & 0xff000000) >> 24;
@@ -123,7 +135,7 @@ namespace unorthodox
                                                             typename Format::component_type blue,
                                                             typename Format::component_type alpha)
     {
-        if constexpr (std::is_same_v<Format::colourspace_type, colourspace_type_rgb_tag>)
+        if constexpr (std::is_same_v<typename Format::colourspace_type, colourspace_type_rgb_tag>)
         {
             colour_type rval;
             rval.component[Format::red_component]   = red;

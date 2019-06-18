@@ -38,6 +38,9 @@ Roadmap
 Later
 -----
 
+### Utility
+- [ ] Enumerate
+
 ### Colour
 - [ ] Conversion functions
   - [ ] Wavelength to RGB
