@@ -4,10 +4,7 @@
 #include <experimental/propagate_const>
 #include <memory>
 
-// -std=c++2a -Xclang -fconcepts-ts
-
-// #include "../include/unorthodox/colour.hpp"
-#include "colour.hpp"
+#include <unorthodox/colour.hpp>
 
 namespace unorthodox
 {
@@ -16,7 +13,7 @@ namespace unorthodox
         { t.clear };
     };
     
-    template <typename T> concept VideoOutput = requires(T t)
+    template <typename T> concept VideoTarget = requires(T t)
     {
         { t.present() };
     };
@@ -30,7 +27,7 @@ namespace unorthodox
             OPENGL_CONTEXT,
         };
 
-        struct colour_bits
+        struct colour_info_type
         {
             int8_t red_bits     = 8;
             int8_t green_bits   = 8;
@@ -40,12 +37,12 @@ namespace unorthodox
 
         constexpr window_info() = default;
 
-        context_type    context = context_type::OPENGL_ES_CONTEXT;
-        colour_bits     colour;
+        context_type        context = context_type::OPENGL_ES_CONTEXT;
+        colour_info_type    colour_info;
     };
 
-    template <Renderer RenderingType, VideoOutput Output>
-    class basic_video_output : public RenderingType, public Output
+    template <Renderer RenderingType, VideoTarget Target>
+    class basic_video_output : public RenderingType, public Target
     {
         public:
             basic_video_output(const window_info = window_info());
@@ -54,13 +51,13 @@ namespace unorthodox
         private:
     };
 
-    template <Renderer R, VideoOutput O>
-    basic_video_output<R, O>::basic_video_output(const window_info info)
+    template <Renderer R, VideoTarget T>
+    basic_video_output<R, T>::basic_video_output(const window_info info)
     {
     }
 
-    template <Renderer R, VideoOutput O>
-    basic_video_output<R, O>::~basic_video_output()
+    template <Renderer R, VideoTarget T>
+    basic_video_output<R, T>::~basic_video_output()
     {
     }
 
