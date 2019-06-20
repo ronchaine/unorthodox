@@ -10,23 +10,35 @@ namespace unorthodox
 {
     template <typename T> concept Renderer = requires(T t)
     {
+        typename T::context_type;
+
         { t.clear };
     };
     
     template <typename T> concept VideoTarget = requires(T t)
     {
+        // Target traits
+        { T::is_resizable } -> const bool;
+        { T::is_headless } -> const bool;
+        { T::sends_events } -> const bool;
+        { T::receives_events } -> const bool;
+
         { t.present() };
+
+        requires (T::is_resizable == false) || requires { t.resize(); };
+        requires (T::is_resizable == false) || requires { t.set_size(); };
+        requires (T::is_headless == true) || requires {{ t.is_open() } -> bool; };
+
+//        requires (T::sends_events == false); || requires {};
+//        requires (T::receives_events == false) || requires {{ t.is_open() } -> bool; };
+    };
+
+    struct context_info
+    {
     };
 
     struct window_info
     {
-        enum class context_type
-        {
-            NO_CONTEXT,
-            OPENGL_ES_CONTEXT,
-            OPENGL_CONTEXT,
-        };
-
         struct colour_info_type
         {
             int8_t red_bits     = 8;
@@ -37,7 +49,6 @@ namespace unorthodox
 
         constexpr window_info() = default;
 
-        context_type        context = context_type::OPENGL_ES_CONTEXT;
         colour_info_type    colour_info;
     };
 
@@ -54,14 +65,15 @@ namespace unorthodox
     template <Renderer R, VideoTarget T>
     basic_video_output<R, T>::basic_video_output(const window_info info)
     {
+        if (info.colour_info.red_bits == 8)
+            return;
+        return;
     }
 
     template <Renderer R, VideoTarget T>
     basic_video_output<R, T>::~basic_video_output()
     {
     }
-
-//    using window = basic_video_output;
 }
 
 #endif
