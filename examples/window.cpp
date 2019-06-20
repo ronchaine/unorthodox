@@ -1,15 +1,77 @@
-#include <unorthodox/gfx.hpp>
+#include <unorthodox/video_io.hpp>
+#include <unorthodox/basic_types.hpp>
 
-int main(int argc, char* argv[])
+#include <unorthodox/graphics/window.hpp>
+
+namespace unorthodox::context
+{
+    struct gles3 {};
+}
+
+namespace unorthodox
+{
+    struct Event
+    {
+    };
+
+    class MinimalRenderer
+    {
+    };
+
+    class MinimalTarget
+    {
+    };
+
+    template <typename Context>
+    class GenericOpenGLRenderer
+    {
+        public:
+            using context_type = Context;
+
+            template <typename T> requires unorthodox::is_colour<T>::value
+            void clear(T value);
+
+            // treat uint32_t as rgba hex
+            void clear(uint32_t value) { clear(unorthodox::colour::rgba(value)); }
+    };
+
+    class GLFWWindowVideoOut
+    {
+        public:
+            constexpr static bool is_resizable = false;
+            constexpr static bool is_headless = false;
+
+            constexpr static bool sends_events = false;
+            constexpr static bool receives_events = false;
+
+            GLFWWindowVideoOut& set_title(std::string_view);
+            GLFWWindowVideoOut& set_size(Size2D size);
+
+            void create();
+            bool is_open();
+
+            void resize();
+
+            void present();
+
+            void wait_events();
+            void poll_events();
+
+            void add_callback_for_event(Event, std::function<void(const Event&)>);
+    };
+
+    using window = basic_video_output<GenericOpenGLRenderer<context::gles3>, GLFWWindowVideoOut>;
+}
+
+//int main(int argc, char* argv[])
+int main()
 {
     // Create default video output
     unorthodox::window window;
-/*
+
     window.set_title("BSDL test")
-          .set_size({1280,720})
+          .set_size({1280, 720})
           .create();
-*/
-    window.create();
 
     // describe a shape that can be used in rendering.  By default viewport coordinates equal pixel coordinates
 //    unorthodox::shapes::triangle triangle({100,200}, {200, 200}, {150, 100});
@@ -34,6 +96,6 @@ int main(int argc, char* argv[])
 
         // flush window drawing operations and swap back and front buffers
         // (show what has been queued to be drawn)
-        window.swap_buffers();
+        window.present();
     }
 }

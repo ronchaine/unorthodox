@@ -8,7 +8,7 @@ project(
   ],
 )
 
-add_project_arguments(['-Wall', '-Wextra', '-Werror'], language : 'cpp')
+add_project_arguments(['-Wall', '-Wextra', '-Werror', '-Wno-missing-braces'], language : 'cpp')
 
 compiler = meson.get_compiler('cpp').get_id()
 
@@ -25,4 +25,5 @@ unorthodox_include_path = include_directories('include')
 
 subdir('benchmarks')
 subdir('tests')
+subdir('examples')
 
