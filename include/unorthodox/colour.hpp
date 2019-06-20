@@ -44,6 +44,7 @@ namespace unorthodox
 
         // needs to define what type each component is stored as
         typename T::component_type;
+        typename T::component_index;
 
         // needs to say how many components
         { T::components };
@@ -53,6 +54,7 @@ namespace unorthodox
     {
         using colourspace_type = colourspace_type_rgb_tag;
         using component_type = uint8_t;
+        using component_index = size_t;
 
         constexpr static int components = 4;
 
@@ -66,6 +68,7 @@ namespace unorthodox
     {
         using colourspace_type = colourspace_type_rgb_tag;
         using component_type = uint8_t;
+        using component_index = size_t;
 
         constexpr static int components = 3;
 
@@ -74,7 +77,7 @@ namespace unorthodox
         constexpr static size_t blue_component  = 2;
     };
 
-    template <ColourFormat Format>
+    template <ColourFormat Format = format_rgba8>
     class colour_type
     {
         public:
@@ -84,11 +87,26 @@ namespace unorthodox
                                               typename Format::component_type,
                                               typename Format::component_type);
 
+            constexpr static colour_type rgb(typename Format::component_type,
+                                             typename Format::component_type,
+                                             typename Format::component_type);
+
             constexpr static colour_type hsv(double, double, double);
 
             // Ways to read the value
             constexpr uint32_t      as_rgba_value() const;
             constexpr std::string   as_ansi_code() const;
+
+            constexpr uint8_t red() const;
+            constexpr uint8_t green() const;
+            constexpr uint8_t blue() const;
+            constexpr uint8_t alpha() const;
+
+            constexpr double hue() const;
+            constexpr double saturation() const;
+            constexpr double value() const;
+
+            constexpr typename Format::component_type component_value(typename Format::component_index index);
 
         private:
             constexpr colour_type() noexcept = default;
@@ -97,6 +115,9 @@ namespace unorthodox
     };
 
     using colour = colour_type<format_rgba8>;
+
+    template <typename T> struct is_colour { constexpr static bool value = false; };
+    template <typename T> struct is_colour<colour_type<T>> { constexpr static bool value = true; };
 
     constexpr inline std::tuple<double, double, double> rgb_to_hsv(double red, double green, double blue);
 //    [[ expects: var_in_range(red,         0.0, 1.0)   ]]
