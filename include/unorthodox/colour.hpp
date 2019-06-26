@@ -94,7 +94,7 @@ namespace unorthodox
             constexpr static colour_type hsv(double, double, double);
 
             // Ways to read the value
-            constexpr uint32_t      as_rgba_value() const;
+            constexpr uint32_t      as_rgba_int() const;
             constexpr std::string   as_ansi_code() const;
 
             constexpr uint8_t red() const;
@@ -180,6 +180,30 @@ namespace unorthodox
 
         return rval;
     }
+
+    // Ways to read the value
+
+    //! Get RGBA integer value of the colour
+    template <ColourFormat Format>
+    constexpr uint32_t colour_type<Format>::as_rgba_int() const
+    {
+        return 0x00000000;
+    }
+
+    /*
+    constexpr std::string   as_ansi_code() const;
+
+    constexpr uint8_t red() const;
+    constexpr uint8_t green() const;
+    constexpr uint8_t blue() const;
+    constexpr uint8_t alpha() const;
+
+    constexpr double hue() const;
+    constexpr double saturation() const;
+    constexpr double value() const;
+
+    constexpr typename Format::component_type component_value(typename Format::component_index index);
+    */
 
     //! Convert HSV triple to RGB tuple
     /*!

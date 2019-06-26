@@ -23,6 +23,8 @@ endif
 
 unorthodox_include_path = include_directories('include')
 
+subdir('src')
+
 subdir('benchmarks')
 subdir('tests')
 subdir('examples')
