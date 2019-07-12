@@ -22,7 +22,7 @@ Roadmap
   - [x] HSV to RGB
   - [x] RGB to HSV
 - [ ] Colour spaces
-  - [ ] Basic support for RGB colourspaces
+  - [x] Basic support for RGB colourspaces
   - [ ] Basic support for greyscale colourspaces
   - [ ] Basic support for cylinderical colourspaces
 
@@ -69,13 +69,17 @@ Later
 
 ### Video IO
 - [ ] Basic video target
-  - [ ] GLFW target
-  - [ ] File target
+  - [ ] Example GLFW target
+  - [ ] Example File target
 - [ ] Basic event system
   - [ ] Keyboard
   - [ ] Mouse
   - [ ] Touch
   - [ ] Stylus
+
+### Plotting
+- [ ] Plot class
+
   
 ### Networking
 - [ ] UDP/TCP sockets

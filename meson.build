@@ -7,8 +7,10 @@ project(
     'default_library=static'
   ],
 )
-
-add_project_arguments(['-Wall', '-Wextra', '-Werror', '-Wno-missing-braces'], language : 'cpp')
+ 
+add_global_arguments(['-g', '-pg'], language : 'c')
+add_global_arguments(['-g', '-pg'], language : 'cpp')
+add_project_arguments(['-Wall', '-Wextra', '-Werror', '-Wno-missing-braces', '-pg'], language : 'cpp')
 
 compiler = meson.get_compiler('cpp').get_id()
 

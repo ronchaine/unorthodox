@@ -20,7 +20,14 @@ int main()
 //    window << paint(triangle, 0xffffffff);
 //    window << paint(triangle, texture, 0xffffffff);
 
-    while (window.is_open())
+//    Easy plots!
+//    window << plot({array, array});
+
+//    Text
+//    window << "String literals work!";
+//    window << paint("You can also paint strings!", 0xff0000ff);
+
+//    while (window.is_open())
     {
         // clear back buffer to colour specified, no-op if not using a renderer
         window.clear(0x300000a0);
