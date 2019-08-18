@@ -3,7 +3,6 @@
 
 #include <unorthodox/graphics/window.hpp>
 
-//int main(int argc, char* argv[])
 int main()
 {
     // Create default video output
@@ -27,7 +26,7 @@ int main()
 //    window << "String literals work!";
 //    window << paint("You can also paint strings!", 0xff0000ff);
 
-//    while (window.is_open())
+    while (window.is_open())
     {
         // clear back buffer to colour specified, no-op if not using a renderer
         window.clear(0x300000a0);

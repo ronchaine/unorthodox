@@ -1,14 +1,22 @@
 # Remote TAKE-FALLBACK if system GLFW is wanted
-glfw      = dependency('glfw3-TAKE-FALLBACK', fallback : ['glfw', 'glfw_dep'])
-#subproject('glfw')
+glfw = dependency('glfw3-TAKE-FALLBACK', fallback : ['glfw', 'glfw_dep'])
 
-libepoxy  = dependency('epoxy')
+libepoxy = dependency('epoxy')
 
-graphics_lib_sources = [
+glfw_reference_target_sources = [
   'glfw_target/window.cpp'
 ]
+
+glfw_reference_target_deps = [
+  glfw
+]
+
+graphics_lib_sources = [
+  glfw_reference_target_sources
+]
+
 graphics_lib_dependencies = [
-  glfw,
+  glfw_reference_target_deps,
   libepoxy,
 ]
 

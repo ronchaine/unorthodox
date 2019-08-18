@@ -90,3 +90,28 @@ Later
     - [ ] Linux / BSD
     - [ ] Windows
     - [ ] OS X
+
+
+Ideas to explore
+================
+
+unorthodox::opaque
+------------------
+used like
+
+enum Color : unorthodox::opaque
+{
+    Blaa,
+    Blaa2,
+}
+
+int value = Blaa; // error
+
+unorthodox::error
+-----------------
+error handling wrapper that can be chosen
+with compile-time-switch to throw or not?
+
+unorthodox::file
+----------------
+because does someone actually use fstream?
