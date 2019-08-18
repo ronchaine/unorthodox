@@ -25,21 +25,15 @@ void run_echo_server(uint16_t port)
 
 TEST_CASE("TCP") {
     unorthodox::tcp_socket tcp_client;
-    unorthodox::buffer recv_buf;
     std::thread server_thread([](){ run_accept_server(16015); });
 
     // Give the server time to start
     std::this_thread::sleep_for(10ms);
 
-    SUBCASE("hello") {
+    SUBCASE("simple hello") {
         tcp_client.connect("127.0.0.1", 16015);
-        recv_buf = tcp_client.recv();
-        REQUIRE(recv_buf.size() == 5);
-        REQUIRE(static_cast<char>(recv_buf[0]) == 'h');
-        REQUIRE(static_cast<char>(recv_buf[1]) == 'e');
-        REQUIRE(static_cast<char>(recv_buf[2]) == 'l');
-        REQUIRE(static_cast<char>(recv_buf[3]) == 'l');
-        REQUIRE(static_cast<char>(recv_buf[4]) == 'o');
+        std::string msg = tcp_client.recv().read_string();
+        REQUIRE(msg == "hello");
     }
     server_thread.join();
 }

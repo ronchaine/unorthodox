@@ -1,6 +1,7 @@
 #ifndef UNORTHODOX_BUFFER_HPP
 #define UNORTHODOX_BUFFER_HPP
 
+#include <string>
 #include <compare>
 #include <unistd.h>
 
@@ -90,6 +91,8 @@ namespace unorthodox
             size_t          seek(size_t target) const noexcept;
 
             // Read / Write
+            std::string read_string(size_type length = 0) const noexcept;
+
             template <typename T>
             T read_strval() const noexcept;
 
@@ -290,6 +293,22 @@ namespace unorthodox
         }
     }
 
+    // Read / Write
+    inline std::string buffer::read_string(size_type length) const noexcept
+    {
+        std::string rval;
+
+        if (length == 0)
+            length = size() - read_pos;
+
+        length = length + read_pos > size() ? size() - read_pos : length;
+
+        for (size_t i = 0; i < length; ++i)
+            rval += static_cast<char>(*(data_ptr + i));
+
+        return rval;
+    }
+
     // private functions
     // -----------------
 
@@ -297,6 +316,7 @@ namespace unorthodox
     {
         reserve(std::max(capacity() * GROW_MULTIPLIER, capacity() + amount));
     }
+
 }
 
 #endif
