@@ -485,7 +485,10 @@ namespace unorthodox
     template <typename SocketType> template <typename Output>
     error_code socket<SocketType>::accept(Output& out_target, std::chrono::milliseconds timeout) noexcept
     {
-        static_assert(SocketType::type == SOCK_STREAM, "Cannot use accept() with a datagram socket");
+        static_assert(is_stl_like_container<Output>() || std::is_same<Output&, socket<SocketType>&>::value,
+                      "Output parameter needs to be either socket reference or stl-compatible array");
+        static_assert(SocketType::type == SOCK_STREAM,
+                      "Cannot use accept() with a datagram socket");
 
         if ((socket_ipv6 <= 0) && (socket_ipv4 <= 0))
             return error::no_active_socket;
