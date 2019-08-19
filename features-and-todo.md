@@ -82,9 +82,9 @@ Later
 
   
 ### Networking
-- [ ] UDP/TCP sockets
+- [x] UDP/TCP sockets
+  - [ ] sync API (missing tests)
   - [ ] async callback API
-  - [ ] sync API
 - [ ] SSL socket wrapper
   - [ ] Certificate handling
     - [ ] Linux / BSD
