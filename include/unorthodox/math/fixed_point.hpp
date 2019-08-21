@@ -3,11 +3,80 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <compare>
+
+/*
+ * TODO:
+ *  basic stuff:
+ *  abs()
+ *  fmod()
+ *  remainder()
+ *  max()
+ *  min()
+ *  exp()
+ *  exp2()
+ *  expm1()
+ *  log()
+ *  log10()
+ *  log2()
+ *  log1p()
+ *  pow()
+ *  sqrt()
+ *  cbrt()
+ *
+ *  trigonometry:
+ *  hypot()
+ *  sin()
+ *  cos()
+ *  tan()
+ *  asin()
+ *  acos()
+ *  atan()
+ *  atan2()
+ *
+ *  sinh()
+ *  cosh()
+ *  tanh()
+ *  asinh()
+ *  acosh()
+ *  atanh()
+ */
 
 namespace unorthodox
 {
-    template <unsigned int ScalingFactor, typename BaseType = int32_t>
+    template <unsigned int WholeBits, unsigned int FractionBits, bool Signed = true>
     class fixed_point;
+
+    template <unsigned int WholeBits, unsigned int FractionBits>
+    class unsigned_fixed_point : public fixed_point<WholeBits, FractionBits, false> {};
+
+    template <unsigned int bits>
+    constexpr uint32_t bytesize_for_bits() noexcept
+    {
+        if (bits <= 8) return 1;
+        else if (bits <= 16) return 2;
+        else if (bits <= 32) return 4;
+        else if (bits <= 64) return 8;
+        else if (bits <= 128) return 16;
+
+        return 0;
+    }
+
+    template <unsigned int Bytes>
+    struct smallest_signed_integer_type { using type = void; };
+    template <> struct smallest_signed_integer_type<1> { using type = int8_t; };
+    template <> struct smallest_signed_integer_type<2> { using type = int16_t; };
+    template <> struct smallest_signed_integer_type<4> { using type = int32_t; };
+    template <> struct smallest_signed_integer_type<8> { using type = int64_t; };
+    template <> struct smallest_signed_integer_type<16> { using type = __int128_t; };
+
+    template <unsigned int Bytes>
+    struct smallest_unsigned_integer_type { using type = void; };
+    template <> struct smallest_unsigned_integer_type<1> { using type = uint8_t; };
+    template <> struct smallest_unsigned_integer_type<2> { using type = uint16_t; };
+    template <> struct smallest_unsigned_integer_type<4> { using type = uint32_t; };
+    template <> struct smallest_unsigned_integer_type<8> { using type = uint64_t; };
+    template <> struct smallest_unsigned_integer_type<16> { using type = __uint128_t; };
 
     template <typename T>
     struct is_fixed_point
@@ -16,8 +85,8 @@ namespace unorthodox
         constexpr operator bool() { return value; }
     };
     
-    template <unsigned int P, typename U>
-    struct is_fixed_point<fixed_point<P,U>>
+    template <unsigned int I, unsigned int F, bool S>
+    struct is_fixed_point<fixed_point<I,F,S>>
     {
         constexpr static bool value = true;
         constexpr operator bool() { return value; }
@@ -63,13 +132,16 @@ namespace unorthodox
         using integer_overflow_type = typename integer_overflow_struct<T>::type;
     }
 
-    template <unsigned int Precision, typename BaseType>
+    template <unsigned int IntegerBits, unsigned int FractionBits, bool Signed>
     class fixed_point
     {
         public:
-            constexpr static uint32_t integer_bits = sizeof(BaseType) - Precision;
-            constexpr static uint32_t fractional_bits = Precision;
-            using underlying_type = BaseType;
+            constexpr static uint32_t integer_bits = IntegerBits;
+            constexpr static uint32_t fractional_bits = FractionBits;
+
+            using underlying_type = std::conditional<Signed,
+                                    smallest_signed_integer_type<IntegerBits + FractionBits>,
+                                    smallest_unsigned_integer_type<IntegerBits + FractionBits>>;
 
             /*
              *  Construction / Destruction
@@ -86,15 +158,11 @@ namespace unorthodox
             template <typename T> requires(std::is_arithmetic<T>::value)
             constexpr operator T() const noexcept;
 
-            template <uint32_t P, typename U>
-            constexpr operator fixed_point<P,U>() const noexcept;
+            template <uint32_t Int, uint32_t Frac, bool Sign>
+            constexpr operator fixed_point<Int,Frac,Sign>() const noexcept;
 
             // comparison
-            //std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
-            template <typename T> constexpr bool operator==(const T& rhs) noexcept
-            {
-                return value == static_cast<fixed_point>(rhs).value;
-            }
+            std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
 
             /*
              * Assignment
@@ -118,10 +186,10 @@ namespace unorthodox
         private:
             friend struct std::hash<fixed_point>;
             
-            template <uint32_t P, typename U>
+            template <uint32_t Int, uint32_t Frac, bool Sign>
             friend class fixed_point;
 
-            BaseType value = 0;
+            underlying_type value = 0;
     };
 }
 
