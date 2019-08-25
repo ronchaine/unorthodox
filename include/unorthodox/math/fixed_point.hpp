@@ -148,9 +148,11 @@ namespace unorthodox
             constexpr static uint32_t integer_bits = IntegerBits;
             constexpr static uint32_t fractional_bits = FractionBits;
 
-            using underlying_type = std::conditional<Signed,
-                                    smallest_signed_integer_type<IntegerBits + FractionBits>,
-                                    smallest_unsigned_integer_type<IntegerBits + FractionBits>>;
+            static_assert(not std::is_same<typename smallest_signed_integer_type<(IntegerBits + FractionBits) / 8>::type, void>::value);
+
+            using underlying_type = typename std::conditional<Signed,
+                                    typename smallest_signed_integer_type<(IntegerBits + FractionBits) / 8>::type,
+                                    typename smallest_unsigned_integer_type<(IntegerBits + FractionBits) / 8>::type>::type;
 
             /*
              *  Construction / Destruction
@@ -171,7 +173,10 @@ namespace unorthodox
             constexpr operator fixed_point<Int,Frac,Sign>() const noexcept;
 
             // comparison
-            std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
+            std::strong_ordering operator<=>(const fixed_point& rhs) const //= default;
+            {
+                return value <=> rhs.value;
+            }
 
             /*
              * Assignment
