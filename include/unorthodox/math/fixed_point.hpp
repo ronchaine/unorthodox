@@ -3,7 +3,10 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <limits>
 #include <compare>
+
+#include <iostream>
 
 /*
  * TODO:
@@ -148,11 +151,11 @@ namespace unorthodox
             constexpr static uint32_t integer_bits = IntegerBits;
             constexpr static uint32_t fractional_bits = FractionBits;
 
-            static_assert(not std::is_same<typename smallest_signed_integer_type<(IntegerBits + FractionBits) / 8>::type, void>::value);
-
             using underlying_type = typename std::conditional<Signed,
-                                    typename smallest_signed_integer_type<(IntegerBits + FractionBits) / 8>::type,
-                                    typename smallest_unsigned_integer_type<(IntegerBits + FractionBits) / 8>::type>::type;
+                                    typename smallest_signed_integer_type<(bytesize_for_bits<IntegerBits + FractionBits>())>::type,
+                                    typename smallest_unsigned_integer_type<(bytesize_for_bits<IntegerBits + FractionBits>())>::type>::type;
+
+            static_assert(not std::is_same<underlying_type, void>::value);
 
             /*
              *  Construction / Destruction
@@ -167,16 +170,21 @@ namespace unorthodox
 
             // conversion from
             template <typename T> requires(std::is_arithmetic<T>::value)
-            constexpr operator T() const noexcept;
+            explicit constexpr operator T() const noexcept;
 
             template <uint32_t Int, uint32_t Frac, bool Sign>
             constexpr operator fixed_point<Int,Frac,Sign>() const noexcept;
 
             // comparison
-            std::strong_ordering operator<=>(const fixed_point& rhs) const //= default;
-            {
-                return value <=> rhs.value;
-            }
+            // std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
+
+            // TODO: Remove when C++20 comes in favour of above
+            bool operator< (const fixed_point& rhs) const   { return value <  rhs.value; }
+            bool operator> (const fixed_point& rhs) const   { return value >  rhs.value; }
+            bool operator<=(const fixed_point& rhs) const   { return value <= rhs.value; }
+            bool operator>=(const fixed_point& rhs) const   { return value >= rhs.value; }
+            bool operator==(const fixed_point& rhs) const   { return value == rhs.value; }
+            bool operator!=(const fixed_point& rhs) const   { return value != rhs.value; }
 
             /*
              * Assignment
@@ -196,9 +204,32 @@ namespace unorthodox
             template <typename T> constexpr fixed_point& operator /=(const T rhs) noexcept;
             template <typename T> constexpr fixed_point operator /(const T rhs) const noexcept;
 
+            constexpr fixed_point& operator++() noexcept { ++value; return *this; }
+            constexpr fixed_point operator++(int) noexcept { fixed_point tmp = *this; ++value; return tmp; }
+            constexpr fixed_point& operator--() noexcept { value--; return *this; }
+            constexpr fixed_point operator--(int) noexcept { fixed_point tmp = *this; --value; return tmp; }
+
+            /*
+             * Min / Max etc.
+             */
+            constexpr static fixed_point min() noexcept;
+            constexpr static fixed_point max() noexcept;
+            constexpr static fixed_point epsilon() noexcept;
+            constexpr static fixed_point round_error() noexcept;
+
+            /*
+             * for std::cout
+             */
+            friend std::ostream& operator<<(std::ostream& os, const fixed_point& fp)
+            {
+                const underlying_type frac = fp.value & ((1 << fractional_bits) - 1);
+                os << (fp.value >> fractional_bits) << " (" << frac << "/" << (2 << (fractional_bits - 1)) << ")";
+                return os;
+            }
+
         private:
             friend struct std::hash<fixed_point>;
-            
+
             template <uint32_t Int, uint32_t Frac, bool Sign>
             friend class fixed_point;
 
@@ -374,6 +405,46 @@ namespace unorthodox
     {
         return (fixed_point<Int,Frac,Sign>(*this)) /= rhs;
     }
+
+    template <uint32_t Int, uint32_t Frac, bool Sign>
+    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::min() noexcept
+    {
+        fixed_point fp;
+        if constexpr(Sign)
+        {
+            fp.value = 1u << (sizeof(underlying_type) * 8 - 1);
+            return fp;
+        } else {
+            return 0;
+        }
+    }
+
+    template <uint32_t Int, uint32_t Frac, bool Sign>
+    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::max() noexcept
+    {
+        fixed_point fp;
+        if constexpr(Sign)
+        {
+            fp.value = ~0 & ~(1u << (sizeof(underlying_type) * 8 - 1));
+            return fp;
+        } else {
+            return ~fp.value;
+        }
+    }
+
+    template <uint32_t Int, uint32_t Frac, bool Sign>
+    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::epsilon() noexcept
+    {
+        fixed_point fp;
+        fp.value = 0b1;
+        return fp;
+    }
+
+    template <uint32_t Int, uint32_t Frac, bool Sign>
+    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::round_error() noexcept
+    {
+        return 1;
+    }
 }
 
 namespace std
@@ -392,6 +463,56 @@ namespace std
         {
             return __v.value;
         }
+    };
+
+    // I made this specialisation way too tired, didn't think all of the values through,
+    // so it probably needs some testing and/or review
+
+    // Also, should make rounding go to nearest to reduce round_error() to 0.5?
+    template <uint32_t Int, uint32_t Frac, bool Sign>
+    class numeric_limits<unorthodox::fixed_point<Int,Frac,Sign>>
+    {
+        using T = unorthodox::fixed_point<Int,Frac,Sign>;
+
+        public:
+            constexpr static bool is_specialized                = true;
+            constexpr static bool is_signed                     = Sign;
+            constexpr static bool is_integer                    = false;
+            constexpr static bool is_exact                      = false;
+            constexpr static bool is_bounded                    = true;
+            constexpr static int digits                         = T::integer_bits + T::fractional_bits;
+            constexpr static int digits10                       = (T::integer_bits + T::fractional_bits) * std::log10(2);
+            constexpr static int max_digits10                   = digits10;
+            constexpr static int radix                          = 2;
+
+            constexpr static int min_exponent                   = 0;
+            constexpr static int min_exponent10                 = 0;
+            constexpr static int max_exponent                   = 0;
+            constexpr static int max_exponent10                 = 0;
+
+            constexpr static bool has_infinity                  = false;
+            constexpr static bool has_quiet_NaN                 = false;
+            constexpr static bool has_signaling_NaN             = false;
+            constexpr static bool is_modulo                     = T::Sign;
+            constexpr static bool traps                         = true;
+
+            constexpr static bool has_denorm_loss               = false;
+            constexpr static std::float_denorm_style has_denorm = std::denorm_absent;
+            constexpr static std::float_round_style round_style = std::round_toward_zero;
+            constexpr static bool is_iec559                     = false;
+
+            constexpr static bool tinyness_before               = false;
+
+            constexpr static T min() noexcept                   { return T::min(); }
+            constexpr static T max() noexcept                   { return T::max(); }
+            constexpr static T lowest() noexcept                { return -T::max(); }
+            constexpr static T epsilon() noexcept               { return T::epsilon(); }
+            constexpr static T round_error() noexcept           { return T::round_error(); }
+
+            constexpr static T infinity() noexcept              { return 0; }
+            constexpr static T quiet_NaN() noexcept             { return 0; }
+            constexpr static T signaling_NaN() noexcept         { return 0; }
+            constexpr static T denorm_min() noexcept            { return 0; }
     };
 }
 #endif
