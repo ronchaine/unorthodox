@@ -189,6 +189,12 @@ namespace unorthodox
             return a % b;
         }
     }
+
+    template <typename T> requires(std::is_arithmetic<T>::value)
+    constexpr inline T factorial(const T n) noexcept
+    {
+        return n > 0 ? n * factorial(n - 1) : 1;
+    }
 }
 
 #endif

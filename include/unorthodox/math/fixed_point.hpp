@@ -247,7 +247,7 @@ namespace unorthodox
         if constexpr(std::is_integral<T>::value)
             value = in << fractional_bits;
         else if constexpr(std::is_floating_point<T>::value)
-            value = in * (1 << fractional_bits);
+            value = in * (1ull << fractional_bits);
 
         static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value, "conversion from unknown arithmetic type");
     }
@@ -258,7 +258,7 @@ namespace unorthodox
         if constexpr(std::is_integral<T>::value)
             return static_cast<T>(value >> fractional_bits);
         else if constexpr(std::is_floating_point<T>::value)
-            return static_cast<T>((T)value / (1 << fractional_bits));
+            return static_cast<T>((T)value / (1ull << fractional_bits));
 
         static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value, "conversion to unknown arithmetic type");
     }
@@ -283,7 +283,7 @@ namespace unorthodox
         if constexpr(std::is_integral<T>::value)
             value += (rhs << fractional_bits);
         else if constexpr(std::is_floating_point<T>::value)
-            value += rhs * (1 << fractional_bits);
+            value += rhs * (1ull << fractional_bits);
         else if constexpr(std::is_same<typename std::decay<T>::type,
                                        typename std::decay<fixed_point<Int,Frac,Sign>>::type>::value)
             value += rhs.value;
@@ -298,7 +298,7 @@ namespace unorthodox
         if constexpr(std::is_integral<T>::value)
             value -= (rhs << fractional_bits);
         else if constexpr(std::is_floating_point<T>::value)
-            value -= rhs * (1 << fractional_bits);
+            value -= rhs * (1ull << fractional_bits);
         else if constexpr(std::is_same<typename std::decay<T>::type,
                                        typename std::decay<fixed_point<Int,Frac,Sign>>::type>::value)
             value -= rhs.value;
@@ -478,7 +478,7 @@ namespace std
             constexpr static bool is_exact                      = false;
             constexpr static bool is_bounded                    = true;
             constexpr static int digits                         = T::integer_bits + T::fractional_bits;
-            constexpr static int digits10                       = (T::integer_bits + T::fractional_bits) * std::log10(2);
+            constexpr static int digits10                       = (T::integer_bits + T::fractional_bits) * log10(2);
             constexpr static int max_digits10                   = digits10;
             constexpr static int radix                          = 2;
 
