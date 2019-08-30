@@ -153,7 +153,10 @@ namespace unorthodox
     template <typename T> requires(std::is_arithmetic<T>::value)
     constexpr inline T abs(const T& value) noexcept
     {
-        return value < 0 ? -value : value;
+        if constexpr (std::is_signed<T>::value)
+            return value < 0 ? -value : value;
+        else
+            return value;
     }
 
     template <typename T> requires(std::is_arithmetic<T>::value)

@@ -10,8 +10,6 @@
 
 /*
  * TODO:
- *  needs to work with <random>
- *
  *  basic stuff:
  *  abs()
  *  fmod()
@@ -91,18 +89,10 @@ namespace unorthodox
     };
     
     template <unsigned int I, unsigned int F, bool S>
-    struct is_fixed_point<fixed_point<I,F,S>>
-    {
-        constexpr static bool value = true;
-        constexpr operator bool() { return value; }
-    };
+    struct is_fixed_point<fixed_point<I,F,S>> : std::true_type {};
 
     template <unsigned int I, unsigned int F>
-    struct is_fixed_point<unsigned_fixed_point<I,F>>
-    {
-        constexpr static bool value = true;
-        constexpr operator bool() { return value; }
-    };
+    struct is_fixed_point<unsigned_fixed_point<I,F>> : std::true_type {};
 
     namespace detail
     {
@@ -179,12 +169,12 @@ namespace unorthodox
             // std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
 
             // TODO: Remove when C++20 comes in favour of above
-            bool operator< (const fixed_point& rhs) const   { return value <  rhs.value; }
-            bool operator> (const fixed_point& rhs) const   { return value >  rhs.value; }
-            bool operator<=(const fixed_point& rhs) const   { return value <= rhs.value; }
-            bool operator>=(const fixed_point& rhs) const   { return value >= rhs.value; }
-            bool operator==(const fixed_point& rhs) const   { return value == rhs.value; }
-            bool operator!=(const fixed_point& rhs) const   { return value != rhs.value; }
+            bool operator< (const fixed_point& rhs) const { return value <  rhs.value; }
+            bool operator> (const fixed_point& rhs) const { return value >  rhs.value; }
+            bool operator<=(const fixed_point& rhs) const { return value <= rhs.value; }
+            bool operator>=(const fixed_point& rhs) const { return value >= rhs.value; }
+            bool operator==(const fixed_point& rhs) const { return value == rhs.value; }
+            bool operator!=(const fixed_point& rhs) const { return value != rhs.value; }
 
             /*
              * Assignment
@@ -203,6 +193,8 @@ namespace unorthodox
             template <typename T> constexpr fixed_point operator *(const T rhs) const noexcept;
             template <typename T> constexpr fixed_point& operator /=(const T rhs) noexcept;
             template <typename T> constexpr fixed_point operator /(const T rhs) const noexcept;
+
+            friend fixed_point operator-(fixed_point fp) noexcept { fp.value = -fp.value; return fp; }
 
             constexpr fixed_point& operator++() noexcept { ++value; return *this; }
             constexpr fixed_point operator++(int) noexcept { fixed_point tmp = *this; ++value; return tmp; }
@@ -450,11 +442,9 @@ namespace unorthodox
 namespace std
 {
     template <uint32_t Int, uint32_t Frac, bool Sign>
-    struct is_arithmetic<unorthodox::fixed_point<Int,Frac,Sign>>
-    {
-        constexpr static bool value = true;
-        constexpr operator bool() { return value; }
-    };
+    struct is_arithmetic<unorthodox::fixed_point<Int,Frac,Sign>> : std::true_type {};
+    template <uint32_t Int, uint32_t Frac, bool Sign>
+    struct is_signed<unorthodox::fixed_point<Int,Frac,Sign>> : std::true_type {};
 
     template <uint32_t Int, uint32_t Frac, bool Sign>
     struct hash<unorthodox::fixed_point<Int,Frac,Sign>>
