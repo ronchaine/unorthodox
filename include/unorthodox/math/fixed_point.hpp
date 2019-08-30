@@ -8,12 +8,13 @@
 
 #include <iostream>
 
+#include "../math.hpp"
+
 /*
  * TODO:
  *  needs to work with <random>
  *
  *  basic stuff:
- *  abs()
  *  fmod()
  *  remainder()
  *  max()
@@ -447,6 +448,12 @@ namespace unorthodox
     }
 }
 
+// math.hpp template specialisations
+namespace unorthodox
+{
+}
+
+// std template specialisations
 namespace std
 {
     template <uint32_t Int, uint32_t Frac, bool Sign>
