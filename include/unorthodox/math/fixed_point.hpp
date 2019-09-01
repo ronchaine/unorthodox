@@ -156,7 +156,7 @@ namespace unorthodox
             constexpr fixed_point(fixed_point&&) noexcept = default;
 
             // conversion to
-            template <typename T> requires(std::is_arithmetic<T>::value)
+            template <typename T> requires(std::is_arithmetic<T>::value && !is_fixed_point<T>::value)
             constexpr fixed_point(T) noexcept;
 
             // conversion from
@@ -241,14 +241,18 @@ namespace unorthodox
     }
 
     // Conversions
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T> requires(std::is_arithmetic<T>::value)
+    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
+        requires(std::is_arithmetic<T>::value && !is_fixed_point<T>::value)
     constexpr fixed_point<Int,Frac,Sign>::fixed_point(T in) noexcept
     {
         if constexpr(std::is_integral<T>::value)
-            value = in << fractional_bits;
+        {
+            value = static_cast<underlying_type>(in) << fractional_bits;
+        }
         else if constexpr(std::is_floating_point<T>::value)
             value = in * (1ull << fractional_bits);
 
+        static_assert(not is_fixed_point<T>::value);
         static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value, "conversion from unknown arithmetic type");
     }
 
