@@ -1,21 +1,65 @@
 Roadmap
 =======
 
-0.1
----
+legend
+------
+x = done
+! = done, but untested
+W = work in progress (branch after name)
+  = unstarted
+
+sooner
+------
 
 ### Mathematics
 
 - [x] `var_in_range`
 - [x] `fract_iec559`
 - [x] `round_iec559`
-- [ ] `round_icast` (missing tests)
+- [!] `round_icast`
 - [x] `round`
 - [x] `abs`
 - [x] `modulo`
 - [x] `remainder`
 - [x] `minimum`
 - [x] `maximum`
+
+- [ ] `fixed_point`
+  - [x] Basic functionality
+  - [ ] cmath functions
+    - [!] abs() // untested
+    - [ ] fmod()
+    - [ ] remainder()
+    - [ ] max()
+    - [ ] min()
+
+    - [ ] exponents & logarithms
+      - [ ] exp()
+      - [ ] exp2()
+      - [ ] expm1()
+      - [ ] log()
+      - [ ] log10()
+      - [ ] log2()
+      - [ ] log1p()
+      - [ ] pow()
+      - [ ] sqrt()
+      - [ ] cbrt()
+
+    - [ ] trigonometry
+      - [ ] hypot()
+      - [ ] sin()
+      - [ ] cos()
+      - [ ] tan()
+      - [ ] asin()
+      - [ ] acos()
+      - [ ] atan()
+      - [ ] atan2()
+      - [ ] sinh()
+      - [ ] cosh()
+      - [ ] tanh()
+      - [ ] asinh()
+      - [ ] acosh()
+      - [ ] atanh()
 
 ### Colour
 - [x] Conversion functions
@@ -35,7 +79,7 @@ Roadmap
 - [ ] Collisions
 - [ ] Triangulation
 
-Later
+later
 -----
 
 ### Utility
@@ -83,7 +127,7 @@ Later
   
 ### Networking
 - [x] UDP/TCP sockets
-  - [ ] sync API (missing tests)
+  - [!] sync API
   - [ ] async callback API
 - [ ] SSL socket wrapper
   - [ ] Certificate handling
