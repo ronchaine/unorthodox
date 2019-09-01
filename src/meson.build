@@ -1,3 +1,3 @@
 # FIXME: do these conditionally
-subdir('graphics')
+# subdir('graphics')
 

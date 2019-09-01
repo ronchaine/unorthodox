@@ -3,7 +3,7 @@ window_example_sources = [
 ]
 
 window_example_dependencies = [
-  unorthodox_graphics_lib_dep
+  #  unorthodox_graphics_lib_dep
 ]
 
 window_example = executable('window',

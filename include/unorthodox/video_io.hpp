@@ -52,14 +52,16 @@ namespace unorthodox
         colour_info_type    colour_info;
     };
 
-    template <Renderer RenderingType, VideoTarget Target>
-    class basic_video_output : public RenderingType, public Target
+    template <Renderer RendererImplementation, VideoTarget Target>
+    class basic_video_output
     {
         public:
             basic_video_output(const window_info = window_info());
            ~basic_video_output();
 
         private:
+            std::unique_ptr<RendererImplementation> renderer;
+            std::unique_ptr<Target> target;
     };
 
     template <Renderer R, VideoTarget T>
