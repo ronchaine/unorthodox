@@ -1,3 +1,3 @@
 [submodule "subprojects/unorthodox-renderers"]
-	path = subprojects/renderers
+	path = subprojects/unorthodox-renderers
 	url = git@github.com:ronchaine/unorthodox-renderers.git
