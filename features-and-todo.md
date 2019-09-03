@@ -136,21 +136,6 @@ later
     - [ ] OS X
 
 
-Ideas to explore
-================
-
-unorthodox::opaque
-------------------
-used like
-
-enum Color : unorthodox::opaque
-{
-    Blaa,
-    Blaa2,
-}
-
-int value = Blaa; // error
-
 unorthodox::error
 -----------------
 error handling wrapper that can be chosen
