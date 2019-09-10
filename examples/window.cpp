@@ -8,7 +8,7 @@ int main()
     // Create default video output
     unorthodox::window window;
 
-    window.set_title("BSDL test")
+    window.set_title("Unorthodox graphics test")
           .set_size({1280, 720})
           .create();
 
