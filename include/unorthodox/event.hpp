@@ -1,41 +1,50 @@
-#ifndef UNORTHODOX_EVENT_HPP
-#define UNORTHODOX_EVENT_HPP
+#ifndef UNORTHODOX_COMMON_EVENT_SYSTEM
+#define UNORTHODOX_COMMON_EVENT_SYSTEM
 
-using event_desc = uint16_t;
+#include <chrono>
+#include <vector>
 
-// Event sources
-constexpr static event_desc src_keyboard    = 0x0001;
-constexpr static event_desc src_mouse       = 0x0002;
-constexpr static event_desc src_touch       = 0x0004;
-constexpr static event_desc src_stylus      = 0x0008;
-constexpr static event_desc src_gamepad     = 0x0010;
-constexpr static event_desc src_window      = 0x0020;
-constexpr static event_desc src_timer       = 0x0040;
-constexpr static event_desc src_network     = 0x0080;
-constexpr static event_desc src_filesystem  = 0x0100;
-constexpr static event_desc src_variable    = 0x0200;
+#include <experimental/propagate_const>
 
-constexpr static event_desc src_any         = 0xffff;
+#include <unorthodox/error_codes.hpp>
 
-// Event types
-constexpr static event_desc type_press      = 0x0001;
-constexpr static event_desc type_release    = 0x0002;
-constexpr static event_desc type_motion     = 0x0004;
-constexpr static event_desc type_gesture    = 0x0008;
-
-template <typename T>
-concept event_type = requires(T t)
+namespace unorthodox
 {
+    // Platform-specific, a file descriptor on POSIX?
+    class event_source
+    {
+        public:
+        private:
+    };
+
+    class event
+    {
+        public:
+        private:
+    };
+
+    using event_list = std::vector<event>;
+
+    class event_group
+    {
+        public:
+            event_group();
+            event_group(event_group&&);
+            event_group(const event_group&) = delete;
+
+            event_group& operator=(event_group&&);
+            event_group& operator=(const event_group&) = delete;
+
+            error_code add_source(event_source& src);
+            error_code remove_source(event_source& src);
+
+            event_list wait(const std::chrono::milliseconds timeout = std::chrono::milliseconds(0));
+            event_list poll();
+
+        private:
+            struct impl;
+            std::experimental::propagate_const<std::unique_ptr<impl>> implementation;
+    };
 }
-
-class keyboard_event
-{
-    using callback_fun_type = std::function<void(keyboard_event)>;
-};
-
-describe_event(src_keyboard | src_mouse);
-
-on_event(Event& ev).call([&](auto& event){
-        });
 
 #endif

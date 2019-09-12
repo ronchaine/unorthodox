@@ -11,14 +11,16 @@ Goals
 * Ease of use
 * Cross-platform (should work at least on Windows, Linux with glibc/musl and FreeBSD)
 * Usable by anybody with C++20-enabled compiler
+* ABI stability (once we're at a point its reasonable to freeze it)
 
 Scope
 =====
 Unorthodox should consist of
 
-* Mathematics
 * Graphics
 * Networking
+* Event System
+* Mathematics
 * Utility tools
 
 All of which provide high-level interface to commom functionality, they do not need to replace
@@ -30,6 +32,7 @@ Mathematics
 - Fixed point type
 - Geometry
 - Vectors, Matrices and Quaternions
+- Header-only
 
 Graphics
 --------
@@ -51,12 +54,16 @@ Utility
 -------
 - Enumerate (unless it gets into standard first)
 - Physical units
-- Common event system
+
+Event system
+------------
+- Should be able to be integrated with system stuff (i.e. anything with fd on unix)
 
 Compiling
 =========
 The codebase uses some C++20 features, such as Concepts, and will use more of them,
-especially <=> and modules as they become available in clang. So currently a custom-
-built version of clang is required to compile.
+especially <=> (and probably modules) as they become available in clang. So currently
+a custom-built version of clang is required to compile.  MSVC's next version should
+be able to build this as well.
 
 Later on, plan is to support at least all of the big three compilers
