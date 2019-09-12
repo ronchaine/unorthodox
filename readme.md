@@ -18,7 +18,6 @@ Unorthodox should consist of
 
 * Mathematics
 * Graphics
-* Audio
 * Networking
 * Utility tools
 
@@ -39,10 +38,6 @@ Graphics
 - API for opening window and reading input
   - Reference implementation (using SDL2 or GLFW?)
 - Plotting
-
-Audio
------
-- Basic 3D audio playing
 
 Networking
 ----------
