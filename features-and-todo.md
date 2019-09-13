@@ -105,26 +105,29 @@ later
   - [ ] Integrate std::chrono
 
 ### Event system
-- [ ] Window events from Video IO
+- [ ] Window events
 - [ ] Network events
 - [ ] Timer events
 - [ ] Filesystem events
 - [ ] Variable change events
 
-### Video IO
-- [ ] Basic video target
-  - [ ] Example GLFW target
-  - [ ] Example File target
-- [ ] Basic event system
-  - [ ] Keyboard
-  - [ ] Mouse
-  - [ ] Touch
-  - [ ] Stylus
+### Windowing
+- [ ] External target like GLFW, SDL, whatever (get native window handle and forward events)
+- [ ] Core
+  - [ ] Wayland
+  - [ ] Cocoa
+  - [ ] Win32
+- [ ] Extra
+  - [ ] GBM/KMS
+  - [ ] X11
 
-### Plotting
-- [ ] Plot class
+### Graphics
+- [ ] Plotting
+- [ ] Drawing geometry
+  - [ ] External renderer
+  - [ ] GLES3
 
-  
+
 ### Networking
 - [x] UDP/TCP sockets
   - [!] sync API
@@ -144,3 +147,35 @@ with compile-time-switch to throw or not?
 unorthodox::file
 ----------------
 because does someone actually use fstream?
+
+
+Project infra todo
+==================
+- [ ] Set up CI environment
+  - [ ] Core
+    - [ ] Linux/gnu
+      - [ ] Automated builds
+      - [ ] Tests
+    - [ ] Linux/musl
+      - [ ] Automated builds
+      - [ ] Tests
+    - [ ] FreeBSD
+      - [ ] Automated builds
+      - [ ] Tests
+    - [ ] Windows
+      - [ ] Automated builds
+      - [ ] Tests
+  - [ ] Extra
+    - [ ] Android
+      - [ ] Automated builds
+      - [ ] Tests
+    - [ ] Other * BSDs
+      - [ ] Automated builds
+      - [ ] Tests
+    - [ ] PureDarwin
+      - [ ] Automated builds
+      - [ ] Tests
+    - [ ] OS X
+      - [ ] Automated builds
+      - [ ] Tests
+
