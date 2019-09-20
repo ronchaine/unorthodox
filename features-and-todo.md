@@ -6,6 +6,7 @@ legend
 x = done
 ! = done, but untested
 W = work in progress (branch after name)
+p = partial (what is missing?)
   = unstarted
 
 sooner
@@ -151,6 +152,8 @@ because does someone actually use fstream?
 
 Project infra todo
 ==================
+Automated builds include both libc++ and libstdc++ where applicable
+
 - [ ] Set up CI environment
   - [ ] Core
     - [ ] Linux/gnu
