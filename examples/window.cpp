@@ -6,11 +6,11 @@
 int main()
 {
     // Create default video output
-    unorthodox::window window;
+    auto window = unorthodox::create_window();
 
     window.set_title("Unorthodox graphics test")
           .set_size({1280, 720})
-          .create();
+          .open();
 
     // describe a shape that can be used in rendering.  By default viewport coordinates equal pixel coordinates
 //    unorthodox::shapes::triangle triangle({100,200}, {200, 200}, {150, 100});
