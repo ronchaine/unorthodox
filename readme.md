@@ -19,7 +19,6 @@ Unorthodox should consist of
 
 * Graphics
 * Networking
-* Event System
 * Mathematics
 * Utility tools
 
@@ -57,7 +56,7 @@ Utility
 
 Event system
 ------------
-- Should be able to be integrated with system stuff (i.e. anything with fd on unix)
+- moved to its own project as github.com/ronchaine/libcppevents
 
 Compiling
 =========
