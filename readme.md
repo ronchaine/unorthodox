@@ -45,7 +45,7 @@ Networking
 ----------
 - Raw sockets
 - UDP/TCP
-- SSL sockets (using OpenSSL or LibreSSL(?))
+- SSL sockets (using OpenSSL or LibreSSL(?)
 - Websockets
 - Various RFCs (probably sometime way later)
 
@@ -56,7 +56,7 @@ Utility
 
 Event system
 ------------
-- moved to its own project as github.com/ronchaine/libcppevents
+- moved to its own project: https://github.com/ronchaine/libcppevents
 
 Compiling
 =========
