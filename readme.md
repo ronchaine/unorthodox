@@ -20,7 +20,6 @@ Unorthodox should consist of
 * Graphics
 * Networking
 * Mathematics
-* Utility tools
 
 All of which provide high-level interface to commom functionality, they do not need to replace
 libraries specifically meant for those purposes.  (We are not making another Eigen and add some
@@ -48,11 +47,6 @@ Networking
 - SSL sockets (using OpenSSL or LibreSSL(?)
 - Websockets
 - Various RFCs (probably sometime way later)
-
-Utility
--------
-- Enumerate (unless it gets into standard first)
-- Physical units
 
 Event system
 ------------
