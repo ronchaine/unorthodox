@@ -211,7 +211,7 @@ namespace unorthodox
     buffer::buffer(const char* src) noexcept
     {
         size_type size = strlen(src);
-        reserve(size);
+        reserve(size+1);
         strcpy(reinterpret_cast<char*>(data_ptr), src);
         element_count = size;
     }
@@ -219,7 +219,7 @@ namespace unorthodox
     buffer::buffer(char* src) noexcept
     {
         size_type size = strlen(src);
-        reserve(size);
+        reserve(size+1);
         strcpy(reinterpret_cast<char*>(data_ptr), src);
         element_count = size;
     }
