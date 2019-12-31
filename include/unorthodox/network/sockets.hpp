@@ -201,6 +201,7 @@ namespace unorthodox
 
             #if defined(HAS_CPPEVENTS)
             bool nonowning = false;
+            // TODO: need better way to handle this
             mutable std::unordered_set<cppevents::event_queue*> linked_queues;
             #endif
     };
@@ -265,10 +266,10 @@ namespace unorthodox
     template <typename SocketType>
     void socket<SocketType>::close() noexcept
     {
+        #if defined(HAS_CPPEVENTS)
         if (nonowning)
             return;
 
-        #if defined(HAS_CPPEVENTS)
         for (auto& queue : linked_queues)
         {
             queue->remove_native_source(socket_ipv6);
