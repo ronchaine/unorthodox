@@ -19,9 +19,7 @@ Unorthodox should consist of
 
 * Graphics
 * Networking
-* Event System
 * Mathematics
-* Utility tools
 
 All of which provide high-level interface to commom functionality, they do not need to replace
 libraries specifically meant for those purposes.  (We are not making another Eigen and add some
@@ -46,18 +44,13 @@ Networking
 ----------
 - Raw sockets
 - UDP/TCP
-- SSL sockets (using OpenSSL or LibreSSL(?))
+- SSL sockets (using OpenSSL or LibreSSL(?)
 - Websockets
 - Various RFCs (probably sometime way later)
 
-Utility
--------
-- Enumerate (unless it gets into standard first)
-- Physical units
-
 Event system
 ------------
-- Should be able to be integrated with system stuff (i.e. anything with fd on unix)
+- moved to its own project: https://github.com/ronchaine/libcppevents
 
 Compiling
 =========
