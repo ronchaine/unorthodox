@@ -185,7 +185,7 @@ namespace unorthodox
             explicit socket(const cppevents::network_event&) noexcept;
             void connect_events(cppevents::event_queue& queue, int state);
 
-            static socket& get_socket_from_event(const cppevents::network_event&) noexcept;
+            static socket get_socket_from_event(const cppevents::network_event&) noexcept;
             #endif
 
         private:
@@ -200,8 +200,8 @@ namespace unorthodox
             #endif
 
             #if defined(HAS_CPPEVENTS)
+            bool nonowning = false;
             mutable std::unordered_set<cppevents::event_queue*> linked_queues;
-            static inline std::unordered_map<int, socket*> followed_sockets;
             #endif
     };
 
@@ -265,6 +265,9 @@ namespace unorthodox
     template <typename SocketType>
     void socket<SocketType>::close() noexcept
     {
+        if (nonowning)
+            return;
+
         #if defined(HAS_CPPEVENTS)
         for (auto& queue : linked_queues)
         {
@@ -272,9 +275,6 @@ namespace unorthodox
             queue->remove_native_source(socket_ipv4);
             queue->remove_native_source(listen_fd);
         }
-        followed_sockets.erase(socket_ipv6);
-        followed_sockets.erase(socket_ipv4);
-        followed_sockets.erase(listen_fd);
         #endif
         if (socket_ipv6 > 0)
             ::close(socket_ipv6);
@@ -310,13 +310,6 @@ namespace unorthodox
         #if defined(__linux__) || defined(__linux)
         listen_fd = other.listen_fd;
         other.listen_fd = uninitialised;
-        #endif
-
-        #if defined(HAS_CPPEVENTS)
-        if (followed_sockets.count(socket_ipv4))
-            followed_sockets[socket_ipv4] = this;
-        if (followed_sockets.count(socket_ipv6))
-            followed_sockets[socket_ipv6] = this;
         #endif
         return *this;
     };
@@ -633,6 +626,7 @@ namespace unorthodox
         if (bytes == 0)
         {
             // remote closed connection
+            nonowning = false;
             close();
             return rval;
         }
@@ -709,6 +703,18 @@ namespace unorthodox::detail
         cppevents::network_event ev;
         ev.type = cppevents::network_event::socket_ready;
         ev.sock_handle = fd;
+
+        sockaddr_storage their_addr;
+        socklen_t addr_size = sizeof(their_addr);
+
+        getsockname(fd, (sockaddr*)&their_addr, &addr_size);
+        char s[INET6_ADDRSTRLEN];
+        inet_ntop(their_addr.ss_family,
+                  helpers::get_in_addr((sockaddr*)&their_addr),
+                  s, sizeof(s));
+
+        ev.peer_address = s;
+
         return std::move(ev);
     }
 }
@@ -728,24 +734,19 @@ namespace unorthodox
         else
         {
             if (socket_ipv4 > 0)
-            {
                 queue.add_native_source(socket_ipv4, detail::create_socket_io_event);
-                followed_sockets[socket_ipv4] = this;
-            }
             if (socket_ipv6 > 0)
-            {
                 queue.add_native_source(socket_ipv6, detail::create_socket_io_event);
-                followed_sockets[socket_ipv6] = this;
-            }
         }
     }
     
     template <typename SocketType>
-    socket<SocketType>& socket<SocketType>::get_socket_from_event(const cppevents::network_event& ev) noexcept
+    socket<SocketType> socket<SocketType>::get_socket_from_event(const cppevents::network_event& ev) noexcept
     {
-        assert(socket<SocketType>::followed_sockets.count(ev.sock_handle));
-        assert(socket<SocketType>::followed_sockets[ev.sock_handle] != nullptr);
-        return *socket<SocketType>::followed_sockets[ev.sock_handle];
+        std::cout << ev.peer_address << " <- addr\n";
+        socket<SocketType> sock(ev.sock_handle, helpers::deduce_protocol_from_address(ev.peer_address));
+        sock.nonowning = true;
+        return sock;
     }
 }
 // Specialise cppevents templates
