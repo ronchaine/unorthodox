@@ -627,7 +627,9 @@ namespace unorthodox
         if (bytes == 0)
         {
             // remote closed connection
+            #if defined(HAS_CPPEVENTS)
             nonowning = false;
+            #endif
             close();
             return rval;
         }
@@ -696,6 +698,15 @@ namespace unorthodox::detail
         ev.peer_address = s;
         ev.sock_handle = new_fd;
 
+        if (their_addr.ss_family == AF_INET)
+        {
+            ev.peer_port = ntohs(reinterpret_cast<sockaddr_in*>(&their_addr)->sin_port);
+        }
+        else if (their_addr.ss_family == AF_INET6)
+        {
+            ev.peer_port = ntohs(reinterpret_cast<sockaddr_in6*>(&their_addr)->sin6_port);
+        }
+
         return std::move(ev);
     }
 
@@ -708,13 +719,21 @@ namespace unorthodox::detail
         sockaddr_storage their_addr;
         socklen_t addr_size = sizeof(their_addr);
 
-        getsockname(fd, (sockaddr*)&their_addr, &addr_size);
+        getpeername(fd, (sockaddr*)&their_addr, &addr_size);
         char s[INET6_ADDRSTRLEN];
         inet_ntop(their_addr.ss_family,
                   helpers::get_in_addr((sockaddr*)&their_addr),
                   s, sizeof(s));
 
         ev.peer_address = s;
+        if (their_addr.ss_family == AF_INET)
+        {
+            ev.peer_port = ntohs(reinterpret_cast<sockaddr_in*>(&their_addr)->sin_port);
+        }
+        else if (their_addr.ss_family == AF_INET6)
+        {
+            ev.peer_port = ntohs(reinterpret_cast<sockaddr_in6*>(&their_addr)->sin6_port);
+        }
 
         return std::move(ev);
     }
@@ -744,7 +763,6 @@ namespace unorthodox
     template <typename SocketType>
     socket<SocketType> socket<SocketType>::get_socket_from_event(const cppevents::network_event& ev) noexcept
     {
-        std::cout << ev.peer_address << " <- addr\n";
         socket<SocketType> sock(ev.sock_handle, helpers::deduce_protocol_from_address(ev.peer_address));
         sock.nonowning = true;
         return sock;
