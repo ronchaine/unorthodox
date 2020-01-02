@@ -43,6 +43,16 @@
 
 #include <cstring>
 
+#if defined(HAS_CPPEVENTS)
+namespace unorthodox::detail
+{
+    inline cppevents::event create_socket_listen_event(int fd);
+    inline cppevents::event create_socket_io_event(int fd);
+
+    inline cppevents::network_event create_disconnect_event(int fd);
+}
+#endif
+
 namespace unorthodox
 {
     namespace helpers
@@ -201,7 +211,7 @@ namespace unorthodox
 
             #if defined(HAS_CPPEVENTS)
             bool nonowning = false;
-            // TODO: need better way to handle this
+            // TODO/FIXME: need better way to handle this, this doesn't even work
             mutable std::unordered_set<cppevents::event_queue*> linked_queues;
             #endif
     };
@@ -629,6 +639,12 @@ namespace unorthodox
             // remote closed connection
             #if defined(HAS_CPPEVENTS)
             nonowning = false;
+            cppevents::network_event dc = detail::create_disconnect_event(socket_fd);
+            if (linked_queues.size() == 0)
+                send_event(dc);
+            else
+                for (auto& queue : linked_queues)
+                    queue->send_event(dc);
             #endif
             close();
             return rval;
@@ -736,6 +752,33 @@ namespace unorthodox::detail
         }
 
         return std::move(ev);
+    }
+
+    inline cppevents::network_event create_disconnect_event(int fd)
+    {
+        cppevents::network_event ev;
+        ev.type = cppevents::network_event::connection_closed;
+        ev.sock_handle = fd;
+
+        sockaddr_storage their_addr;
+        socklen_t addr_size = sizeof(their_addr);
+
+        getpeername(fd, (sockaddr*)&their_addr, &addr_size);
+        char s[INET6_ADDRSTRLEN];
+        inet_ntop(their_addr.ss_family,
+                  helpers::get_in_addr((sockaddr*)&their_addr),
+                  s, sizeof(s));
+
+        ev.peer_address = s;
+        if (their_addr.ss_family == AF_INET)
+        {
+            ev.peer_port = ntohs(reinterpret_cast<sockaddr_in*>(&their_addr)->sin_port);
+        }
+        else if (their_addr.ss_family == AF_INET6)
+        {
+            ev.peer_port = ntohs(reinterpret_cast<sockaddr_in6*>(&their_addr)->sin6_port);
+        }
+        return ev;
     }
 }
 namespace unorthodox
