@@ -25,7 +25,7 @@ if compiler == 'clang'
 
   add_project_arguments(['-Xclang', '-fconcepts-ts'], language : 'cpp')
 else
-  error('build requires c++20 concepts, use clang as a compiler')
+  add_project_arguments(['-fconcepts'], language : 'cpp')
 endif
 
 unorthodox_include_path = include_directories('include')
