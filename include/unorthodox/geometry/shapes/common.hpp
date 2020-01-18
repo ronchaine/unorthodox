@@ -5,7 +5,7 @@
 
 namespace unorthodox::geometry
 {
-    struct catesian_tag {};
+    struct cartesian_tag {};
     struct polar_tag {};
 
     template <typename T>
@@ -40,7 +40,7 @@ namespace unorthodox::geometry
     // shape base class for traits
     struct shape {};
 
-    <typename T> constexpr bool is_shape() noexcept { return std::is_base_of_v<shape, T>; }
+    template <typename T> constexpr bool is_shape() noexcept { return std::is_base_of_v<shape, T>; }
 }
 
 #endif
