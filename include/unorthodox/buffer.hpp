@@ -188,7 +188,7 @@ namespace unorthodox
         element_count = new_count;
     }
 
-    buffer::~buffer()
+    inline buffer::~buffer()
     {
         if (data_ptr != nullptr)
             free(data_ptr);
@@ -208,7 +208,7 @@ namespace unorthodox
     }
 
     // Conversions (string literals)
-    buffer::buffer(const char* src) noexcept
+    inline buffer::buffer(const char* src) noexcept
     {
         size_type size = strlen(src);
         reserve(size+1);
@@ -216,7 +216,7 @@ namespace unorthodox
         element_count = size;
     }
     
-    buffer::buffer(char* src) noexcept
+    inline buffer::buffer(char* src) noexcept
     {
         size_type size = strlen(src);
         reserve(size+1);
@@ -225,7 +225,7 @@ namespace unorthodox
     }
 
     // Concatenating
-    buffer& buffer::operator+=(const buffer& other) noexcept
+    inline buffer& buffer::operator+=(const buffer& other) noexcept
     {
         reserve(capacity() + other.size());
         nothrow_copy(other.begin(), other.end(), end());
@@ -234,7 +234,7 @@ namespace unorthodox
         return *this;
     }
 
-    buffer buffer::operator+(const buffer& other) noexcept
+    inline buffer buffer::operator+(const buffer& other) noexcept
     {
         buffer rval(*this);
         rval += other;
@@ -242,21 +242,21 @@ namespace unorthodox
     }
 
     // Access
-    constexpr buffer::reference buffer::operator[](const buffer::size_type index) noexcept { return data_ptr[index]; }
-    constexpr buffer::const_reference buffer::operator[](const buffer::size_type index) const noexcept { return data_ptr[index]; }
+    constexpr inline buffer::reference buffer::operator[](const buffer::size_type index) noexcept { return data_ptr[index]; }
+    constexpr inline buffer::const_reference buffer::operator[](const buffer::size_type index) const noexcept { return data_ptr[index]; }
 
     // Iterators
-    buffer::iterator buffer::begin() noexcept { return iterator(&data_ptr[0]); }
-    buffer::iterator buffer::end() noexcept { return iterator(&data_ptr[element_count]); }
+    inline buffer::iterator buffer::begin() noexcept { return iterator(&data_ptr[0]); }
+    inline buffer::iterator buffer::end() noexcept { return iterator(&data_ptr[element_count]); }
 
-    buffer::const_iterator buffer::begin() const noexcept { return iterator(&data_ptr[0]); }
-    buffer::const_iterator buffer::end() const noexcept { return iterator(&data_ptr[element_count]); }
-    
-    buffer::const_iterator buffer::cbegin() const noexcept { return iterator(&data_ptr[0]); }
-    buffer::const_iterator buffer::cend() const noexcept { return iterator(&data_ptr[element_count]); }
+    inline buffer::const_iterator buffer::begin() const noexcept { return iterator(&data_ptr[0]); }
+    inline buffer::const_iterator buffer::end() const noexcept { return iterator(&data_ptr[element_count]); }
+
+    inline buffer::const_iterator buffer::cbegin() const noexcept { return iterator(&data_ptr[0]); }
+    inline buffer::const_iterator buffer::cend() const noexcept { return iterator(&data_ptr[element_count]); }
 
     // Memory
-    void buffer::reserve(size_type new_size) noexcept
+    inline void buffer::reserve(size_type new_size) noexcept
     {
         if (current_size >= new_size)
             return;
@@ -270,7 +270,7 @@ namespace unorthodox
         current_size = new_size;
     }
 
-    void buffer::resize(size_type new_size) noexcept
+    inline void buffer::resize(size_type new_size) noexcept
     {
         if (current_size == new_size)
             return;
@@ -312,7 +312,7 @@ namespace unorthodox
     // private functions
     // -----------------
 
-    void buffer::grow(size_type amount) noexcept
+    inline void buffer::grow(size_type amount) noexcept
     {
         reserve(std::max(capacity() * GROW_MULTIPLIER, capacity() + amount));
     }

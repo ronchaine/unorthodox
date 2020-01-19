@@ -1,9 +1,11 @@
-#ifndef UNORTHODOX_WINDOW_HPP
-#define UNORTHODOX_WINDOW_HPP
+#ifndef UNORTHODOX_GRAPHICS_WINDOW_HPP
+#define UNORTHODOX_GRAPHICS_WINDOW_HPP
 
 #include <experimental/propagate_const>
 
-#include "basic_types.hpp"
+#include "../basic_types.hpp"
+#include "../colour.hpp"
+#include "vertex.hpp"
 
 #if defined(HAS_CPPEVENTS)
 #include <cppevents/window.hpp>
@@ -54,7 +56,8 @@ namespace unorthodox
 
     struct window_configuration
     {
-        bool allow_resize = true;
+        bool            allow_resize = true;
+        context_type    context_type = context_type::OPENGL_ES;
     };
 
     static inline window_configuration default_window_configuration = window_configuration();
@@ -70,7 +73,12 @@ namespace unorthodox
 
             window& set_title(const std::string&);
             window& set_size(Size2D size);
-            
+
+            // renderer access
+            void clear(colour = colour::rgba(0,0,0,0)) noexcept;
+            void queue(const vertex_array&) noexcept;
+
+            void flush() noexcept;
             void present() noexcept;
 
             void wait();
@@ -83,9 +91,13 @@ namespace unorthodox
             void connect_events(cppevents::event_queue& queue, int state);
             #endif
 
+            void operator<<(const vertex_array& arr) noexcept { queue(arr); }
         private:
             std::experimental::propagate_const<std::unique_ptr<Backend>> impl;
     };
+//    window << paint(triangle, 0xffffffff);
+//    window << paint(triangle, texture, 0xffffffff);
+//    window << plot({array, array});
 }
 
 #ifdef UNORTHODOX_ENABLE_MACROS
@@ -104,6 +116,15 @@ namespace unorthodox \
 \
     template <> void \
     ::unorthodox::window<x>::create(window_configuration& conf) { impl->create(conf); } \
+\
+    template <> void \
+    ::unorthodox::window<x>::flush() noexcept { impl->flush(); } \
+\
+    template <> void \
+    ::unorthodox::window<x>::clear(colour c) noexcept { impl->clear(c); } \
+\
+    template <> void \
+    ::unorthodox::window<x>::queue(const vertex_array& arr) noexcept { impl->queue(arr); } \
 \
     template <> void \
     ::unorthodox::window<x>::present() noexcept { impl->present(); } \

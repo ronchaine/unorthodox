@@ -81,6 +81,8 @@ namespace unorthodox
     class colour_type
     {
         public:
+            constexpr colour_type(uint32_t);
+
             constexpr static colour_type rgba(uint32_t);
             constexpr static colour_type rgba(typename Format::component_type,
                                               typename Format::component_type,
@@ -110,7 +112,6 @@ namespace unorthodox
 
         private:
             constexpr colour_type() noexcept = default;
-
             typename Format::component_type component[Format::components];
     };
 
@@ -128,6 +129,9 @@ namespace unorthodox
 //    [[ expects: var_in_range(hue,         0.0, 360.0) ]]
 //    [[ expects: var_in_range(saturation,  0.0, 1.0)   ]]
 //    [[ expects: var_in_range(value,       0.0, 1.0)   ]]
+
+    // Deduction guides
+    // colour_type(uint32_t) -> colour_type<format_rgba8>;
 
     // Implementation zone below
 
