@@ -22,10 +22,6 @@ if compiler == 'clang'
     add_global_arguments(['-stdlib=libc++'], language : 'cpp')
     add_global_link_arguments(['-stdlib=libc++'], language : 'cpp')
   endif
-
-  add_project_arguments(['-Xclang', '-fconcepts-ts'], language : 'cpp')
-else
-  add_project_arguments(['-fconcepts'], language : 'cpp')
 endif
 
 unorthodox_include_path = include_directories('include')

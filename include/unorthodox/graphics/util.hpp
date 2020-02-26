@@ -3,9 +3,24 @@
 
 #include "vertex.hpp"
 #include "../colour.hpp"
+#include "../geometry/shapes.hpp"
 
 namespace unorthodox
 {
+    // TODO: constexpr this when vertex_array can be made constexpr
+    template <typename T>
+    vertex_array create_vertices(const T& shape) requires geometry::trivially_triangularizable<T>
+    {
+        (void)shape;
+        vertex_array rval;
+
+        /*
+        rval.pos_components = T::dimension;
+        rval.uv_components = 0;
+        */
+        return rval;
+    }
+
     template <typename T>
     vertex_array paint(const T& thing, uint32_t int_colour)
     {
@@ -13,10 +28,10 @@ namespace unorthodox
     }
 
     template <typename T, ColourFormat CType>
-    vertex_array paint(const T&, colour_type<CType> col)
+    vertex_array paint(const T& shape, colour_type<CType> col)
     {
         (void)col;
-        return vertex_array{};
+        return create_vertices(shape);
     }
 }
 

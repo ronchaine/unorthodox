@@ -100,16 +100,18 @@ namespace unorthodox
         constexpr static uint32_t feature_flags = Flags;
     };
 
+    // constexpr this class when possible
     class vertex_array
     {
         public:
+            vertex_array() = default;
+
         private:
             /*
-            uint32_t dim = 0;
-            uint32_t uv_count = 0;
-            uint32_t feature_flags = 0;
+            uint8_t pos_components = 0;
+            uint8_t uv_components = 0;
             */
-            buffer vertex_data;
+            buffer data;
     };
 }
 

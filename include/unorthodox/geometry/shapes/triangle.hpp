@@ -10,6 +10,14 @@ namespace unorthodox::geometry
     {
         static_assert(Dimension == 2 or Dimension == 3);
         public:
+
+            using point_type = typename std::conditional<Dimension == 2,
+                                                         cartesian_2d_point<PointType>,
+                                                         cartesian_3d_point<PointType>>::type;
+
+            constexpr static size_t dimension = Dimension;
+            constexpr static size_t vertex_order[3] = { 0, 1, 2 };
+
             constexpr triangle() noexcept = default;
 
             template <typename T, std::size_t N>
@@ -30,11 +38,8 @@ namespace unorthodox::geometry
                 }
             }
 
-            constexpr static size_t vertex_order[3] = { 0, 1, 2 };
-
         private:
-            typename std::conditional<Dimension == 2, cartesian_2d_point<PointType>, cartesian_3d_point<PointType>>::type
-                point[3];
+            point_type point[3];
     };
 
     // deduction guide

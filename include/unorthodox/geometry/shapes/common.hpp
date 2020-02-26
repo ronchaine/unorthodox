@@ -41,6 +41,14 @@ namespace unorthodox::geometry
     struct shape {};
 
     template <typename T> constexpr bool is_shape() noexcept { return std::is_base_of_v<shape, T>; }
+
+    template <typename T> concept trivially_triangularizable = requires(T t)
+    {
+        typename T::point_type;
+
+        { T::dimension };
+        { T::vertex_order };
+    };
 }
 
 #endif

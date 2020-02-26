@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <tuple>
 #include <string>
+#include <cassert>
 
 #include "math.hpp"
 
@@ -99,10 +100,10 @@ namespace unorthodox
             constexpr uint32_t      as_rgba_int() const;
             constexpr std::string   as_ansi_code() const;
 
-            constexpr uint8_t red() const;
-            constexpr uint8_t green() const;
-            constexpr uint8_t blue() const;
-            constexpr uint8_t alpha() const;
+            constexpr typename Format::component_type red() const;
+            constexpr typename Format::component_type green() const;
+            constexpr typename Format::component_type blue() const;
+            constexpr typename Format::component_type alpha() const;
 
             constexpr double hue() const;
             constexpr double saturation() const;
@@ -134,6 +135,15 @@ namespace unorthodox
     // colour_type(uint32_t) -> colour_type<format_rgba8>;
 
     // Implementation zone below
+    template <ColourFormat Format>
+    constexpr colour_type<Format>::colour_type(uint32_t rgba_int)
+    {
+        component[Format::red_component]    = (rgba_int & 0xff000000) >> 24;
+        component[Format::green_component]  = (rgba_int & 0x00ff0000) >> 16;
+        component[Format::blue_component]   = (rgba_int & 0x0000ff00) >> 8;
+        if constexpr (Format::components == 4)
+            component[Format::alpha_component] = (rgba_int & 0x000000ff);
+    }
 
     //! Constructor for colour_type, from RGBA unsigned int (e.g. 0xff0000ff)
     /*!
@@ -196,12 +206,30 @@ namespace unorthodox
 
     /*
     constexpr std::string   as_ansi_code() const;
+    */
 
-    constexpr uint8_t red() const;
-    constexpr uint8_t green() const;
-    constexpr uint8_t blue() const;
-    constexpr uint8_t alpha() const;
+    template <ColourFormat Format>
+    constexpr typename Format::component_type colour_type<Format>::red() const
+    {
+        return component[Format::red_component];
+    }
+    template <ColourFormat Format>
+    constexpr typename Format::component_type colour_type<Format>::green() const
+    {
+        return component[Format::green_component];
+    }
+    template <ColourFormat Format>
+    constexpr typename Format::component_type colour_type<Format>::blue() const
+    {
+        return component[Format::blue_component];
+    }
+    template <ColourFormat Format>
+    constexpr typename Format::component_type colour_type<Format>::alpha() const
+    {
+        return component[Format::alpha_component];
+    }
 
+    /*
     constexpr double hue() const;
     constexpr double saturation() const;
     constexpr double value() const;

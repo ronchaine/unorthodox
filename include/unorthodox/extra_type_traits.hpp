@@ -16,8 +16,12 @@ namespace unorthodox
         typename T::difference_type;
         typename T::size_type;
 
-        { t.begin() } -> typename T::iterator;
-        { t.end() } -> typename T::iterator;
+        { t.begin() };
+        { t.end() };
+        /*
+        { t.begin() } -> std::convertible_to<T::iterator>;
+        { t.end() } -> std::convertible_to<T::iterator>;
+        */
         { t.size() };
     };
 
