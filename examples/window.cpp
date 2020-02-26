@@ -4,6 +4,14 @@
 #include "gfx/sdl2-window.hpp"
 #include "gfx/opengl-es-renderer.hpp"
 
+static uint32_t new_color()
+{
+    static uint32_t counter = 0;
+    counter++;
+
+    return counter % 2 == 0 ? 0xffffffff : 0x00ff00ff;
+}
+
 int main()
 {
     // Create video output, we want to draw to an SDL2 window, and use OpenGL to do that
@@ -31,11 +39,28 @@ int main()
     window.clear(0x300000a0);
     window.present();
     */
+/*
+    cppevents::add_source<cppevents::window>(window);
 
+    bool redraw = true;
+
+    cppevents::on_event<cppevents::mouse_button>([&](cppevents::event& raw){
+        auto ev = event_cast<cppevents::mouse_button>(raw);
+        std::cout << "Button " << static_cast<uint32_t>(ev.button) << " ";
+        if (ev.type == cppevents::mouse_button::button_down)
+            std::cout << "pressed ";
+        else
+            std::cout << "released ";
+
+        std::cout << " (" << ev.click_count << ") -- redraw true\n";
+        redraw = true;
+    });
+*/
     while (window.is_open())
     {
         // clear back buffer to colour specified, no-op if not using a renderer
-        window.clear(0x300000a0);
+//        window.clear(new_color());
+
 
         // block until an event is received
         cppevents::wait();
@@ -48,6 +73,10 @@ int main()
 
         // flush window drawing operations and swap back and front buffers
         // (show what has been queued to be drawn)
+        window.clear(new_color());
+        window.redraw(); 
+//        std::cout << "!\n";
+
         window.present();
     }
 }

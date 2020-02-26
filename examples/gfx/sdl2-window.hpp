@@ -19,7 +19,7 @@ namespace unorthodox
 
             void create(const unorthodox::window_configuration = unorthodox::window_configuration{});
 
-            void flush() noexcept;
+            void redraw() noexcept;
             void present() noexcept;
 
             void wait();

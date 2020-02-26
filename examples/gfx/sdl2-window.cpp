@@ -54,7 +54,7 @@ namespace unorthodox
         (void)conf;
         //TODO: setup by conf params
 //        renderer = std::make_unique<opengl_renderer>(conf);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+//        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 
 //        fmt::print(stderr, "creating window of size {}x{}, title: {}\n", size.w, size.h, title);
 
@@ -94,7 +94,7 @@ namespace unorthodox
         return dirty;
     }
 
-    void sdl2_window::flush() noexcept
+    void sdl2_window::redraw() noexcept
     {
         dirty = true;
     }
