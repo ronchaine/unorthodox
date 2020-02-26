@@ -1,16 +1,27 @@
-#window_example_sources = [
-#  'window.cpp',
-#]
-#
-#window_example_dependencies = [
-#    unorthodox_graphics_lib_dep
-#]
-#
-#window_example = executable('window',
-#  window_example_sources,
-#  include_directories : unorthodox_include_path,
-#  dependencies: window_example_dependencies,
-#)
+cppevents_dep = dependency('libcppevents', fallback:['libcppevents', 'cppevents_dep'])
+cppevents_sdl2_dep = dependency('libcppevents', fallback:['libcppevents', 'cppevents_sdl2_dep'])
+
+sdl2_dep = dependency('sdl2')
+epoxy_dep = dependency('epoxy')
+
+window_example_sources = [
+  'window.cpp',
+  'gfx/sdl2-window.cpp',
+  'gfx/opengl-es-renderer.cpp',
+]
+
+window_example_dependencies = [
+  cppevents_dep,
+  cppevents_sdl2_dep,
+  sdl2_dep,
+  epoxy_dep,
+]
+
+window_example = executable('window',
+  window_example_sources,
+  include_directories : unorthodox_include_path,
+  dependencies: window_example_dependencies,
+)
 
 pipe_example_sources = [
   'pipes.cpp',

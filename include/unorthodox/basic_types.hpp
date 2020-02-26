@@ -5,7 +5,7 @@
 
 namespace unorthodox
 {
-    struct Size2D
+    struct size_2D
     {
         union {
             int32_t w = 0;
