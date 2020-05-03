@@ -2,10 +2,13 @@
 #define UNORTHODOX_UTILITY_HPP
 
 #include <cstdint>
+#include <cstring>
 #include <memory>
 
 namespace unorthodox
 {
+    struct empty {};
+
     constexpr inline bool big_endian_system() noexcept
     {
         uint16_t check = 0xbe1e;
@@ -38,22 +41,29 @@ namespace unorthodox
                 return nullptr;
         }
 
-        if constexpr(!std::is_pointer<InputIt>::value)
-            static_assert(std::is_nothrow_copy_assignable<typename InputIt::value_type>::value);
-
-        if constexpr(std::is_same<typename std::remove_const<InputIt>::type, OutputIt>::value
-                     && std::is_trivially_copy_assignable<OutputIt>::value)
+        if (std::is_constant_evaluated())
         {
-            const size_t e_count = static_cast<size_t>(last - first);
-            if (e_count)
-                std::memmove((void*)&(*dest), (void*)&(*first), e_count * sizeof(typename OutputIt::value_type));
-
-            return dest + e_count;
-        } else {
-            for (; first != last; ++first, (void) ++dest)
-                *dest = *first;
-
+            while (first != last)
+                *dest++ = *first++;
             return dest;
+        } else {
+            if constexpr(!std::is_pointer<InputIt>::value)
+                static_assert(std::is_nothrow_copy_assignable<typename InputIt::value_type>::value);
+
+            if constexpr(std::is_same_v<typename std::remove_const<InputIt>::type, OutputIt>
+                         && std::is_trivially_copy_assignable<OutputIt>::value)
+            {
+                const size_t e_count = static_cast<size_t>(last - first);
+                if (e_count)
+                    std::memmove((void*)&(*dest), (void*)&(*first), e_count * sizeof(typename OutputIt::value_type));
+
+                return dest + e_count;
+            } else {
+                for (; first != last; ++first, (void) ++dest)
+                    *dest = *first;
+
+                return dest;
+            }
         }
     }
 }

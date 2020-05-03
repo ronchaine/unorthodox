@@ -1,3 +1,13 @@
+data_structure_test_sources = [
+  'run_tests.cpp',
+  'dynamic_array.cpp',
+]
+
+data_structure_test = executable('datastruct_tests',
+  data_structure_test_sources,
+  include_directories : unorthodox_include_path,
+)
+
 math_test_sources = [
   'run_tests.cpp',
   'math_basics.cpp'
@@ -32,7 +42,7 @@ tcp_test = executable('tcp_test',
   dependencies: thread_dep,
 )
 
-all_test_sources = math_test_sources + colour_test_sources + tcp_test_sources
+all_test_sources = data_structure_test_sources + math_test_sources + colour_test_sources + tcp_test_sources
 
 all_tests = executable('all_tests',
   all_test_sources,
