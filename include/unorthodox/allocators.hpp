@@ -21,6 +21,7 @@ namespace unorthodox::allocators
 
         [[nodiscard]] constexpr pointer allocate(size_t n) const noexcept;
         constexpr void deallocate(pointer p, size_t) const noexcept;
+        // constexpr pointer reallocate(size_t n) const noexcept;
     };
 
     template <typename T, typename U>
@@ -38,14 +39,15 @@ namespace unorthodox::allocators
         if (n > std::numeric_limits<size_t>::max() / sizeof(T))
             return nullptr;
 
-        return new T[n];
+        return static_cast<T*>(::operator new(n * sizeof(T)));
     }
     
     template <typename T>
-    constexpr void nothrow_allocator<T>::deallocate(pointer p, size_t) const noexcept
+    constexpr void nothrow_allocator<T>::deallocate(pointer p, size_t n) const noexcept
     {
-        delete[] p;
+        ::operator delete(p, n);
     }
+
 }
 
 #endif

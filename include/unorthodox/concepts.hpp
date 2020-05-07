@@ -2,6 +2,7 @@
 #define UNORTHODOX_CONCEPTS_HPP
 
 #include <type_traits>
+#include <cstddef>
 
 namespace unorthodox
 {
@@ -19,6 +20,19 @@ namespace unorthodox
         
         { *t.begin()++ };
         { *t.end()++ };
+    };
+
+    template <typename T> concept std_compatible_allocator = requires(T t)
+    {
+        typename T::value_type;
+
+        { t.allocate(size_t{}) };
+        { t.deallocate };
+    };
+
+    template <typename T> concept reallocable_allocator = std_compatible_allocator<T> && requires(T t)
+    {
+        { t.reallocate(size_t{}) };
     };
 }
 

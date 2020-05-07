@@ -1,6 +1,8 @@
 #ifndef UNORTHODOX_EXTRA_TYPE_TRAITS_HPP
 #define UNORTHODOX_EXTRA_TYPE_TRAITS_HPP
 
+#include "concepts.hpp"
+
 namespace unorthodox
 {
     // Doesn't require all STL functions to be present
@@ -27,6 +29,12 @@ namespace unorthodox
 
     template <typename T>                   constexpr bool is_stl_like_container() { return false; };
     template <stl_compatible_container T>   constexpr bool is_stl_like_container() { return true; };
+
+    template <typename T>
+    constexpr static bool allocator_can_realloc() noexcept { return false; }
+
+    template <typename T> requires reallocable_allocator<T>
+    constexpr static bool allocator_can_realloc() noexcept { return true; }
 }
 
 #endif

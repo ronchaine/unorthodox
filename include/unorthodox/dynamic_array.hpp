@@ -6,6 +6,7 @@
 
 #include "allocators.hpp"
 #include "concepts.hpp"
+#include "extra_type_traits.hpp"
 #include "util.hpp"
 
 #include <iostream>
@@ -92,54 +93,62 @@ namespace unorthodox
             constexpr const_pointer         data() const noexcept;
 
             // Iterators
-            iterator                        begin() noexcept;
-            const_iterator                  begin() const noexcept;
-            iterator                        end() noexcept;
-            const_iterator                  end() const noexcept;
+            constexpr iterator              begin() noexcept;
+            constexpr const_iterator        begin() const noexcept;
+            constexpr iterator              end() noexcept;
+            constexpr const_iterator        end() const noexcept;
 
-            const_iterator                  cbegin() const noexcept;
-            const_iterator                  cend() const noexcept;
+            constexpr const_iterator        cbegin() const noexcept;
+            constexpr const_iterator        cend() const noexcept;
 
-            reverse_iterator                rbegin() noexcept;
-            const_reverse_iterator          rbegin() const noexcept;
-            reverse_iterator                rend() noexcept;
-            const_reverse_iterator          rend() const noexcept;
+            constexpr reverse_iterator       rbegin() noexcept;
+            constexpr const_reverse_iterator rbegin() const noexcept;
+            constexpr reverse_iterator       rend() noexcept;
+            constexpr const_reverse_iterator rend() const noexcept;
 
-            const_reverse_iterator          crbegin() const noexcept;
-            const_reverse_iterator          crend() const noexcept;
+            constexpr const_reverse_iterator crbegin() const noexcept;
+            constexpr const_reverse_iterator crend() const noexcept;
 
             // Observers
             [[nodiscard]] constexpr bool    empty() const noexcept;
             constexpr size_type             size() const noexcept;
-            size_type                       max_size() const noexcept;
-            size_type                       capacity() const noexcept;
-            void                            shrink_to_fit() noexcept;
+            constexpr size_type             max_size() const noexcept;
+            constexpr size_type             capacity() const noexcept;
 
             // Operations
             constexpr void                  reserve(size_type new_size) noexcept;
-            void                            clear() noexcept;
-            iterator                        erase(const_iterator) noexcept;
-            iterator                        erase(const_iterator, const_iterator) noexcept;
-            void                            pop_back() noexcept;
-            void                            resize(size_t) noexcept;
+            constexpr void                  resize(size_t) noexcept;
+            constexpr void                  shrink_to_fit() noexcept;
+            constexpr void                  clear() noexcept;
+            constexpr void                  pop_back() noexcept;
+
+            constexpr iterator              erase(const_iterator) noexcept;
+            constexpr iterator              erase(const_iterator, const_iterator) noexcept;
+
             constexpr void                  swap(dynamic_array&) noexcept;
 
-            iterator                        insert(const_iterator, const T&) noexcept;
-            iterator                        insert(const_iterator, T&&) noexcept;
-            iterator                        insert(const_iterator, size_type, const T&) noexcept;
-            iterator                        insert(const_iterator, std::initializer_list<T>) noexcept;
+            constexpr iterator              insert(const_iterator, const T&) noexcept;
+            constexpr iterator              insert(const_iterator, T&&) noexcept;
+            constexpr iterator              insert(const_iterator, size_type, const T&) noexcept;
+            constexpr iterator              insert(const_iterator, std::initializer_list<T>) noexcept;
 
-            void                            push_back(const T&) noexcept;
-            void                            push_back(T&&) noexcept;
+            constexpr void                  push_back(const T&) noexcept;
+            constexpr void                  push_back(T&&) noexcept;
 
             template <typename InputIt>     // requires std::input_iterator<InputIt>
-            iterator                        insert(const_iterator, InputIt first, InputIt last) noexcept;
+            constexpr iterator              insert(const_iterator, InputIt first, InputIt last) noexcept;
             template <typename... Args>
-            void                            erase(Args&&...) noexcept;
+            constexpr void                  erase(Args&&...) noexcept;
             template <typename... Args>
-            iterator                        emplace(const_iterator pos, Args&&...) noexcept;
+            constexpr iterator              emplace(const_iterator pos, Args&&...) noexcept;
             template <typename... Args>
-            reference                       emplace_back(Args&&...) noexcept;
+            constexpr reference             emplace_back(Args&&...) noexcept;
+
+            template <typename... Values>
+            constexpr void                  prepend(Values...) noexcept;
+
+            template <typename... Values>
+            constexpr void                  append(Values...) noexcept;
 
             template <bool is_const_iterator> class iterator_type;
 
@@ -158,7 +167,7 @@ namespace unorthodox
             void grow(size_type amount) noexcept;
 
             size_type element_count = 0;
-            size_type current_size = 0;
+            size_type current_size = sbo_limit / sizeof(value_type);
 
             union {
                 T* ptr;
@@ -297,7 +306,7 @@ namespace unorthodox
             element.~T();
 
         if (!use_sbo() && store.ptr != nullptr)
-            free(store.ptr);
+            this->allocator.deallocate(store.ptr, current_size);
     }
 
     // ********************
@@ -374,14 +383,32 @@ namespace unorthodox
 
     // ********************
     //  Iterators
+
+    //   iterator                        begin() noexcept;
+    //   const_iterator                  begin() const noexcept;
+    //   iterator                        end() noexcept;
+    //   const_iterator                  end() const noexcept;
+
+    //   const_iterator                  cbegin() const noexcept;
+    //   const_iterator                  cend() const noexcept;
+
+    //   reverse_iterator                rbegin() noexcept;
+    //   const_reverse_iterator          rbegin() const noexcept;
+    //   reverse_iterator                rend() noexcept;
+    //   const_reverse_iterator          rend() const noexcept;
+
+    //   const_reverse_iterator          crbegin() const noexcept;
+    //   const_reverse_iterator          crend() const noexcept;
+
+    // basic stuff
     template <typename T, typename A>
-    typename dynamic_array<T,A>::iterator dynamic_array<T,A>::begin() noexcept { return iterator(data()); }
+    constexpr typename dynamic_array<T,A>::iterator dynamic_array<T,A>::begin() noexcept { return iterator(data()); }
     
     template <typename T, typename A>
-    typename dynamic_array<T,A>::iterator dynamic_array<T,A>::end() noexcept { return iterator(data() + element_count); }
+    constexpr typename dynamic_array<T,A>::iterator dynamic_array<T,A>::end() noexcept { return iterator(data() + element_count); }
     
     template <typename T, typename A>
-    typename dynamic_array<T,A>::const_iterator dynamic_array<T,A>::begin() const noexcept
+    constexpr typename dynamic_array<T,A>::const_iterator dynamic_array<T,A>::begin() const noexcept
     {
         if (!use_sbo())
             return store.ptr;
@@ -390,7 +417,7 @@ namespace unorthodox
     }
 
     template <typename T, typename A>
-    typename dynamic_array<T,A>::const_iterator dynamic_array<T,A>::end() const noexcept
+    constexpr typename dynamic_array<T,A>::const_iterator dynamic_array<T,A>::end() const noexcept
     {
         if (!use_sbo())
             return store.ptr + element_count;
@@ -398,19 +425,95 @@ namespace unorthodox
         return (reinterpret_cast<pointer>(const_cast<sbo_buffer_type*>(&store.data)) + element_count);
     }
 
+    // cbegin, cend...
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::const_iterator dynamic_array<T,A>::cbegin() const noexcept { return begin(); }
+
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::const_iterator dynamic_array<T,A>::cend() const noexcept { return end(); }
+
+    // reverse iterators...
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::reverse_iterator dynamic_array<T,A>::rbegin() noexcept
+    { return std::make_reverse_iterator(end()); }
+
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::reverse_iterator dynamic_array<T,A>::rend() noexcept
+    { return std::make_reverse_iterator(begin()); }
+
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::const_reverse_iterator dynamic_array<T,A>::rbegin() const noexcept
+    { return std::make_reverse_iterator(end()); }
+
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::const_reverse_iterator dynamic_array<T,A>::rend() const noexcept
+    { return std::make_reverse_iterator(begin()); }
+
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::const_reverse_iterator dynamic_array<T,A>::crbegin() const noexcept
+    { return std::make_reverse_iterator(end()); }
+
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::const_reverse_iterator dynamic_array<T,A>::crend() const noexcept
+    { return std::make_reverse_iterator(begin()); }
+
     // ********************
     //  Observers
+
+    //   [[nodiscard]] constexpr bool    empty() const noexcept;
+    //   constexpr size_type             size() const noexcept;
+    //   constexpr size_type             max_size() const noexcept;
+    //   constexpr size_type             capacity() const noexcept;
+ 
+    template <typename T, typename A>
+    [[nodiscard]] constexpr bool dynamic_array<T,A>::empty() const noexcept { return element_count == 0; }
+
     template <typename T, typename A>
     constexpr typename dynamic_array<T,A>::size_type dynamic_array<T,A>::size() const noexcept { return element_count; }
-    
+
     template <typename T, typename A>
-    [[nodiscard]] constexpr bool dynamic_array<T,A>::empty() const noexcept
-    {
-        return element_count == 0;
-    }
+    constexpr typename dynamic_array<T,A>::size_type dynamic_array<T,A>::max_size() const noexcept { return std::numeric_limits<size_type>::max() / sizeof(T); }
+
+    template <typename T, typename A>
+    constexpr typename dynamic_array<T,A>::size_type dynamic_array<T,A>::capacity() const noexcept { return current_size; }
 
     // ********************
     //  Operations
+
+    //   constexpr void                  reserve(size_type new_size) noexcept;
+    //   constexpr void                  resize(size_t) noexcept;
+    //   constexpr void                  shrink_to_fit() noexcept;
+    //   constexpr void                  clear() noexcept;
+    //   constexpr void                  pop_back() noexcept;
+
+    //   constexpr iterator              erase(const_iterator) noexcept;
+    //   constexpr iterator              erase(const_iterator, const_iterator) noexcept;
+
+    //   constexpr void                  swap(dynamic_array&) noexcept;
+
+    //   constexpr iterator              insert(const_iterator, const T&) noexcept;
+    //   constexpr iterator              insert(const_iterator, T&&) noexcept;
+    //   constexpr iterator              insert(const_iterator, size_type, const T&) noexcept;
+    //   constexpr iterator              insert(const_iterator, std::initializer_list<T>) noexcept;
+
+    //   constexpr void                  push_back(const T&) noexcept;
+    //   constexpr void                  push_back(T&&) noexcept;
+
+    //   template <typename InputIt>     // requires std::input_iterator<InputIt>
+    //   constexpr iterator              insert(const_iterator, InputIt first, InputIt last) noexcept;
+    //   template <typename... Args>
+    //   constexpr void                  erase(Args&&...) noexcept;
+    //   template <typename... Args>
+    //   constexpr iterator              emplace(const_iterator pos, Args&&...) noexcept;
+    //   template <typename... Args>
+    //   constexpr reference             emplace_back(Args&&...) noexcept;
+
+    //   template <typename... Values>
+    //   constexpr void                  prepend(Values...) noexcept;
+
+    //   template <typename... Values>
+    //   constexpr void                  append(Values...) noexcept;
+
     template <typename T, typename A>
     constexpr void dynamic_array<T,A>::reserve(size_type new_size) noexcept
     {
@@ -421,10 +524,6 @@ namespace unorthodox
         {
             current_size = new_size;
             return;
-        }
-
-        if constexpr(noexcept(this->allocator.allocate(1)))
-        {
         }
 
         pointer new_ptr = this->allocator.allocate(new_size);
@@ -438,6 +537,55 @@ namespace unorthodox
 
         store.ptr = new_ptr;
         current_size = new_size;
+    }
+
+    template <typename T, typename A>
+    constexpr void dynamic_array<T,A>::resize(size_type new_size) noexcept
+    {
+        if ((element_count == new_size) || ((current_size == 0) && (new_size == 0)))
+            return;
+
+        if (current_size > new_size)
+        {
+            if (new_size < element_count)
+            {
+                for (size_t i = new_size; i < element_count; ++i)
+                    (*(data() + i)).~value_type();
+            } else {
+                for (size_t i = element_count; i < new_size; ++i)
+                    ::new(data() + i) value_type{};
+            }
+            element_count = new_size;
+            return;
+        }
+        if (use_sbo() && use_sbo(new_size))
+        {
+            for (size_type i = element_count; i < new_size; ++i)
+                ::new(data() + i) value_type{};
+
+            element_count = new_size;
+            return;
+        }
+
+        pointer new_ptr = this->allocator.allocate(new_size);
+        for (size_type i = 0; i < new_size; ++i)
+        {
+            if (i < element_count)
+            {
+                // copy / move construct
+                ::new(new_ptr + i) value_type(std::move(*(data() + i)));
+            } else {
+                // placement new
+                ::new(new_ptr + i) value_type{};
+            }
+        }
+        if (!use_sbo())
+            this->allocator.deallocate(store.ptr, current_size);
+
+        store.ptr = new_ptr;
+
+        current_size = new_size;
+        element_count = new_size;
     }
 
     template <typename T, typename A>
