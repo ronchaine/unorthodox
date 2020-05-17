@@ -10,20 +10,26 @@ struct tester
     inline static int constructors = 0;
     inline static int destructors = 0;
 
+    inline static int moves = 0;
+
+//    tester::reset();
     int value = 0;
 
     static void reset()
     {
         constructors = 0;
         destructors = 0;
+        moves = 0;
     }
 
     tester() { constructors++; value = 1; }
     ~tester() { destructors++; }
 
-    tester(const tester&) { constructors++; value = 2; }
-    tester(tester&&) { constructors++; value = 3; }
+    tester(const tester& r) { constructors++; value = r.value; }
+    tester(tester&& r) { constructors++; moves++; value = r.value; }
 
+    tester& operator=(const tester& r) = default;
+    tester& operator=(tester&& r) = default;
 };
 
 TEST_SUITE("Dynamic Array") {
@@ -370,10 +376,226 @@ TEST_SUITE("Dynamic Array") {
             array.resize(40);
             CHECK(tester::constructors == 0);
             CHECK(tester::destructors == 10);
+            for (size_t i = 0; i < 40; ++i)
+                CHECK(array[i].value == i);
             
             array.resize(60);
             CHECK(tester::constructors == 60);
             CHECK(tester::destructors == 10);
+            for (size_t i = 0; i < 40; ++i)
+                CHECK(array[i].value == i);
+        }
+        SUBCASE("clear") {
+            tester::reset();
+            unorthodox::dynamic_array<tester> array;
+
+            array.resize(50);
+            CHECK(tester::constructors == 50);
+            CHECK(tester::destructors == 0);
+
+            array.clear();
+            CHECK(tester::destructors == 50);
+        }
+        SUBCASE("pop_back") {
+            tester::reset();
+            unorthodox::dynamic_array<tester> array;
+
+            array.resize(20);
+            CHECK(tester::constructors == 20);
+
+            array.pop_back();
+            CHECK(array.size() == 19);
+            CHECK(tester::destructors == 1);
+        }
+    }
+
+    TEST_CASE("erase") {
+        unorthodox::dynamic_array<tester> array;
+        array.resize(20);
+        for (size_t i = 0; i < array.size(); ++i)
+            array[i].value = i;
+        CHECK(array.size() == 20);
+
+        tester::reset();
+        SUBCASE("First element") {
+            auto iter = array.erase(array.begin());
+            CHECK(array.size() == 19);
+            CHECK(tester::destructors == 1);
+            for (size_t i = 0; i < array.size(); ++i)
+                CHECK(array[i].value == i + 1);
+
+            CHECK(iter == array.begin());
+        }
+        tester::reset();
+        SUBCASE("Last element") {
+            auto iter = array.erase(array.end());
+            CHECK(array.size() == 19);
+            CHECK(tester::destructors == 1);
+            for (size_t i = 0; i < array.size(); ++i)
+                CHECK(array[i].value == i);
+
+            CHECK(iter == array.end());
+        }
+        tester::reset();
+        SUBCASE("Middle element") {
+            auto iter = array.erase(array.begin() + 2);
+            CHECK(array.size() == 19);
+            CHECK(tester::destructors == 1);
+            for (size_t i = 0; i < array.size(); ++i)
+                if (i < 2)
+                    CHECK(array[i].value == i);
+                else
+                    CHECK(array[i].value == i + 1);
+            CHECK((*iter).value == 3);
+        }
+        SUBCASE("Even elements") {
+            for (auto it = array.begin(); it != array.end();)
+            {
+                if ((*it).value % 2 == 0)
+                    it = array.erase(it);
+                else
+                    ++it;
+            }
+            for (const auto& i : array)
+                CHECK(i.value % 2 != 0);
+
+            CHECK(array.size() == 10);
+            CHECK(tester::destructors == 10);
+        }
+
+        SUBCASE("Range: Middle elements") {
+            auto iter = array.erase(array.begin() + 1, array.end() - 1);
+            CHECK(array.size() == 2);
+            CHECK(tester::destructors == 18);
+            CHECK(iter == array.end() - 1);
+            CHECK(array[0].value == 0);
+            CHECK(array[1].value == 19);
+        }
+
+        SUBCASE("Range: End elements") {
+            auto iter = array.erase(array.begin() + 5, array.end());
+            CHECK(tester::destructors == 15);
+            CHECK(array.size() == 5);
+            CHECK(iter == array.end());
+            CHECK(array[0].value == 0);
+        }
+    }
+
+    TEST_CASE("emplace back") {
+        unorthodox::dynamic_array<tester> array;
+        tester::reset();
+        
+        array.emplace_back();
+        CHECK(array.capacity() >= 1);
+        CHECK(array.size() == 1);
+        CHECK(tester::constructors == 1);
+
+        array.resize(array.capacity());
+        REQUIRE(array.size() == array.capacity());
+
+        tester new_value;
+        new_value.value = 42;
+        tester::reset();
+
+        CHECK(array.emplace_back(new_value).value == 42);
+    }
+
+    TEST_CASE("emplace") {
+        unorthodox::dynamic_array<tester> array;
+        array.resize(20);
+        for (size_t i = 0; i < array.size(); ++i)
+            array[i].value = i;
+        REQUIRE(array.size() == 20);
+
+        tester new_value;
+        new_value.value = 21;
+
+        tester::reset();
+
+        array.emplace(array.begin() + 2, new_value);
+        CHECK(array.size() == 21);
+        CHECK(array.capacity() >= 21);
+
+        // RVO -> 0
+        CHECK(tester::constructors - tester::moves <= 1);
+        CHECK(array[2].value == 21);
+
+        array.emplace(array.begin() + 2, std::move(new_value));
+        CHECK(array.size() == 22);
+        CHECK(array.capacity() >= 22);
+
+        CHECK(tester::constructors - tester::moves <= 1);
+        CHECK(array[2].value == 21);
+
+        for (size_t i = 0; i < array.size(); ++i)
+        {
+            if (i < 2)
+                CHECK(array[i].value == i);
+            else if (i == 2)
+                CHECK(array[i].value == 21);
+            else if (i == 3)
+                CHECK(array[i].value == 21);
+            else
+                CHECK(array[i].value == i - 2);
+        }
+    }
+
+    TEST_CASE("insert") {
+        unorthodox::dynamic_array<tester> array;
+        array.resize(20);
+        for (size_t i = 0; i < array.size(); ++i)
+            array[i].value = i;
+        REQUIRE(array.size() == 20);
+
+        SUBCASE("Single insert, middle") {
+            tester new_value;
+            new_value.value = 21;
+
+            tester::reset();
+
+            array.insert(array.begin() + 2, new_value);
+            CHECK(array.size() == 21);
+            CHECK(tester::constructors - tester::moves == 1);
+            CHECK(array[2].value == 21);
+            for (size_t i = 0; i < array.size(); ++i)
+            {
+                if (i < 2)
+                    CHECK(array[i].value == i);
+                else if (i == 2)
+                    CHECK(array[i].value == 21);
+                else
+                    CHECK(array[i].value == i - 1);
+            }
+        }
+
+        SUBCASE("Insert multiple, middle") {
+            tester new_value;
+            new_value.value = 21;
+
+            tester new_value2;
+            new_value2.value = 22;
+
+            tester new_value3;
+            new_value3.value = 23;
+
+            tester::reset();
+
+            array.insert(array.begin() + 2, new_value, new_value2, new_value3);
+            CHECK(array.size() == 23);
+            CHECK(tester::constructors - tester::moves == 3);
+            for (size_t i = 0; i < array.size(); ++i)
+            {
+                if (i < 2)
+                    CHECK(array[i].value == i);
+                else if (i == 2)
+                    CHECK(array[i].value == 21);
+                else if (i == 3)
+                    CHECK(array[i].value == 22);
+                else if (i == 4)
+                    CHECK(array[i].value == 23);
+                else
+                    CHECK(array[i].value == i - 3);
+            }
         }
     }
 }

@@ -10,6 +10,14 @@ namespace unorthodox
     concept not_void = not std::is_same_v<T, void>;
 
     template <typename T>
+    concept dereferensable_type = requires(T t)
+    {
+        T::value_type;
+
+        { *t };
+    };
+
+    template <typename T>
     concept iterable_type = requires(T t)
     {
         { t.begin() };
