@@ -1,5 +1,5 @@
 cppevents_dep = dependency('libcppevents', fallback:['libcppevents', 'cppevents_dep'])
-cppevents_sdl2_dep = dependency('libcppevents', fallback:['libcppevents', 'cppevents_sdl2_dep'])
+cppevents_sdl2_dep = dependency('libcppevents_sdl2', fallback:['libcppevents', 'cppevents_sdl2_dep'])
 
 sdl2_dep = dependency('sdl2')
 epoxy_dep = dependency('epoxy')
