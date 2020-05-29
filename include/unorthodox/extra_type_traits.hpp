@@ -35,6 +35,12 @@ namespace unorthodox
 
     template <typename T> requires reallocable_allocator<T>
     constexpr static bool allocator_can_realloc() noexcept { return true; }
+
+    template <typename T>
+    constexpr static bool is_string_literal()
+    {
+        return std::is_same_v<T, std::add_lvalue_reference_t<const char[std::extent_v<std::remove_reference_t<T>>]>>;
+    }
 }
 
 #endif
