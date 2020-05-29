@@ -17,7 +17,7 @@
 # include <sys/event.h>
 #endif
 
-namespace unorthodox
+namespace unorthodox::net
 {
     #if defined(UNORTHODOX_OS_LINUX)
     using platform_event_type = epoll_event;
@@ -26,7 +26,7 @@ namespace unorthodox
     #endif
 }
 
-namespace unorthodox::network::os
+namespace unorthodox::net::os
 {
     using socket_type = int;
 
@@ -76,18 +76,18 @@ namespace unorthodox::network::os
         if (listen_fd == -1)
         {
             stop_listening();
-            return error::poll_error;
+            return error_code(error_domain::network_error, error_value::poll_error);
         }
 
         if (::listen(sock, backlog_size) == -1)
-            return error::could_not_listen;
+            return error_code(error_domain::network_error, error_value::from_errno());
 
         #if defined(UNORTHODOX_OS_LINUX)
         epoll_event event{};
         event.events = EPOLLIN;
         event.data.fd = sock;
         if (epoll_ctl(listen_fd, EPOLL_CTL_ADD, sock, &event))
-            return error::epoll_error;
+            return error_code(error_domain::network_error, error_value::poll_error);
 
         #elif defined(UNORTHODOX_OS_BSD)
         if (socktype == AF_INET)
@@ -102,7 +102,7 @@ namespace unorthodox::network::os
         }
         #endif
 
-        return error::success;
+        return error_code::success;
     }
 
     int socket_specifics::block_until_listen_event(platform_event_type* output, uint32_t max_events, std::chrono::milliseconds timeout) noexcept

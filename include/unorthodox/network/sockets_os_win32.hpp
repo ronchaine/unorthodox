@@ -1,7 +1,7 @@
 #ifndef UNORTHODOX_NETWORK_SOCKETS_PLATFORM_HPP
 #define UNORTHODOX_NETWORK_SOCKETS_PLATFORM_HPP
 
-namespace unorthodox::network::os
+namespace unorthodox::net::os
 {
     class socket_type
     {

@@ -2,13 +2,14 @@
 #define UNORTHODOX_NETWORK_SOCKETS_HPP
 
 #include <unorthodox/buffer.hpp>
-#include <unorthodox/error_codes.hpp>
 #include <unorthodox/extra_type_traits.hpp>
+#include <unorthodox/error_codes.hpp>
 
 #include <functional>
 #include <chrono>
 
-#include <unorthodox/3rdparty/expected.hpp>
+// until expected is in standard, use tl::expected
+#include <unorthodox/deps/expected.hpp>
 
 #if defined(HAS_CPPEVENTS)
 #include <cppevents/network.hpp>
@@ -47,7 +48,7 @@
 #include <cstring>
 
 #if defined(HAS_CPPEVENTS)
-namespace unorthodox::detail
+namespace unorthodox::net::detail
 {
     inline cppevents::event create_socket_listen_event(int fd);
     inline cppevents::event create_socket_io_event(int fd);
@@ -56,7 +57,7 @@ namespace unorthodox::detail
 }
 #endif
 
-namespace unorthodox
+namespace unorthodox::net
 {
     namespace helpers
     {
@@ -128,21 +129,21 @@ namespace unorthodox
     #endif
 
     template <typename Socket>
-    class socket : public Socket, network::os::socket_specifics
+    class socket : public Socket, os::socket_specifics
     {
         constexpr static int default_backlog_size = 20;
         constexpr static int recv_buffer_size = 1024;
 
         public:
-            constexpr static network::os::socket_type uninitialised  = network::os::uninitialised_socket_value;
-            constexpr static network::os::socket_type disabled       = network::os::disabled_socket_value;
+            constexpr static os::socket_type uninitialised  = os::uninitialised_socket_value;
+            constexpr static os::socket_type disabled       = os::disabled_socket_value;
 
             constexpr static bool is_secure = Socket::secure;
 
             size_t mtu_size = 1200;
 
             socket() noexcept;
-            socket(network::os::socket_type in_socket_fd, int protocol) noexcept;
+            socket(os::socket_type in_socket_fd, int protocol) noexcept;
 
             socket(socket&& other) noexcept;
             socket& operator=(socket&& other) noexcept;
@@ -165,10 +166,10 @@ namespace unorthodox
 
             // communicating
             template <typename T> requires stl_compatible_container<T>
-            ssize_t send(const T& data) const noexcept;
+            tl::expected<size_t, error_code> send(const T& data) const noexcept;
 
             template <typename T>
-            ssize_t send(const T& data) const noexcept;
+            tl::expected<size_t, error_code> send(const T& data) const noexcept;
 
             template <typename T> requires stl_compatible_container<T>
             tl::expected<T, error_code> recv() noexcept;
@@ -181,20 +182,20 @@ namespace unorthodox
             #endif
 
         private:
-            network::os::socket_type get_socket(const char* host, uint16_t port, int family) noexcept;
+            tl::expected<os::socket_type, error_code> get_socket(const char* host, uint16_t port, int family) noexcept;
 
-            network::os::socket_type socket_ipv6 = uninitialised;
-            network::os::socket_type socket_ipv4 = uninitialised;
+            os::socket_type socket_ipv6 = uninitialised;
+            os::socket_type socket_ipv4 = uninitialised;
     };
 
-    using udp_socket = unorthodox::socket<udp_socket_details>;
-    using tcp_socket = unorthodox::socket<tcp_socket_details>;
+    using udp_socket = unorthodox::net::socket<udp_socket_details>;
+    using tcp_socket = unorthodox::net::socket<tcp_socket_details>;
     #if defined(UNORTHODOX_SSL_PROVIDER)
-    using ssl_socket = unorthodox::socket<ssl_socket_details>;
+    using ssl_socket = unorthodox::net::socket<ssl_socket_details>;
     #endif
 }
 
-namespace unorthodox {
+namespace unorthodox::net {
     template <typename SocketType>
     socket<SocketType>::socket() noexcept
     {
@@ -255,7 +256,7 @@ namespace unorthodox {
     }
 
     template <typename SocketType>
-    socket<SocketType>::socket(socket&& other) noexcept : network::os::socket_specifics(std::move(other))
+    socket<SocketType>::socket(socket&& other) noexcept : os::socket_specifics(std::move(other))
     {
         *this = std::move(other);
     }
@@ -278,7 +279,7 @@ namespace unorthodox {
     }
 
     template <typename SocketType>
-    int socket<SocketType>::get_socket(const char* host, uint16_t port, int family) noexcept
+    tl::expected<os::socket_type, error_code> socket<SocketType>::get_socket(const char* host, uint16_t port, int family) noexcept
     {
         addrinfo    hints{};
         addrinfo*   server_info = nullptr;
@@ -301,32 +302,32 @@ namespace unorthodox {
 
         for (info = server_info; info != nullptr; info = info->ai_next)
         {
-            if ((socket_fd = ::socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == network::os::socket_error)
+            if ((socket_fd = ::socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == os::socket_error)
                 continue;
 
             if (family == AF_INET6)
             {
-                if (setsockopt(socket_fd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(int)) == network::os::socket_error)
+                if (setsockopt(socket_fd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(int)) == os::socket_error)
                 {
                     freeaddrinfo(server_info);
-                    return error::setsockopt_failed;
+                    return tl::unexpected(error_code(error_domain::network_error, error_code::setsockopt_failed));
                 }
             }
-            if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == network::os::socket_error)
+            if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == os::socket_error)
             {
                 freeaddrinfo(server_info);
-                return error::setsockopt_failed;
+                return tl::unexpected(error_code(error_domain::network_error, error_code::setsockopt_failed));
             }
 
             if (host == nullptr)
             {
-                if (::bind(socket_fd, info->ai_addr, info->ai_addrlen) == network::os::socket_error)
+                if (::bind(socket_fd, info->ai_addr, info->ai_addrlen) == os::socket_error)
                 {
                     ::close(socket_fd);
                     continue;
                 }
             } else {
-                if (::connect(socket_fd, info->ai_addr, info->ai_addrlen) == network::os::socket_error)
+                if (::connect(socket_fd, info->ai_addr, info->ai_addrlen) == os::socket_error)
                 {
                     ::close(socket_fd);
                     continue;
@@ -343,7 +344,7 @@ namespace unorthodox {
     }
 
     template <typename SocketType>
-    socket<SocketType>::socket(network::os::socket_type in_socket_fd, int protocol) noexcept
+    socket<SocketType>::socket(os::socket_type in_socket_fd, int protocol) noexcept
     {
         if (protocol == AF_INET)
         {
@@ -368,24 +369,22 @@ namespace unorthodox {
     error_code socket<SocketType>::open(const char* host, uint16_t port) noexcept
     {
         if ((socket_ipv6 > 0) || (socket_ipv4 > 0))
-            return error::socket_already_open;
+            return error_code(error_domain::network_error, error_value::socket_already_open);
 
         if (host == nullptr)
         {
-            socket_ipv6 = get_socket(host, port, AF_INET6);
-            socket_ipv4 = get_socket(host, port, AF_INET);
+            socket_ipv6 = get_socket(host, port, AF_INET6).value_or(disabled);
+            socket_ipv4 = get_socket(host, port, AF_INET).value_or(disabled);
         } else {
-            socket_ipv6 = get_socket(host, port, AF_INET6);
-            if (socket_ipv6 > 0)
-                socket_ipv4 = disabled;
-            else
-                socket_ipv4 = get_socket(host, port, AF_INET);
+            socket_ipv6 = get_socket(host, port, AF_INET6).value_or(disabled);
+            if (socket_ipv6 == disabled)
+                socket_ipv4 = get_socket(host, port, AF_INET).value_or(disabled);
         }
 
         if ((socket_ipv6 >= 0) || (socket_ipv4 >= 0))
-            return error::success;
+            return error_code::success;
 
-        return error::cannot_open_socket;
+        return error_code(error_domain::network_error, error_value::cannot_open_socket);
     }
 
     template <typename SocketType>
@@ -403,7 +402,7 @@ namespace unorthodox {
         if (socket_ipv4 > 0)
         {
             status = platform_listen_socket(port, backlog_size, socket_ipv4, AF_INET);
-            if (status == error::could_not_listen || status == error::poll_error)
+            if (status.code == error_value::could_not_listen || status.code == error_value::poll_error)
             {
                 ::close(socket_ipv4);
                 socket_ipv4 = disabled;
@@ -415,7 +414,7 @@ namespace unorthodox {
         if (socket_ipv6 > 0)
         {
             status = platform_listen_socket(port, backlog_size, socket_ipv6, AF_INET6);
-            if (status == error::could_not_listen || status == error::poll_error)
+            if (status.code == error_value::could_not_listen || status.code == error_value::poll_error)
             {
                 ::close(socket_ipv6);
                 socket_ipv6 = disabled;
@@ -434,7 +433,7 @@ namespace unorthodox {
                 "Output parameter needs to be either socket reference or stl-compatible array of such");
 
         if ((socket_ipv6 < 0) && (socket_ipv4 <= 0))
-            return error::no_active_socket;
+            return error_code(error_domain::network_error, error_value::no_active_socket);
 
         sockaddr_storage their_addr;
         socklen_t addr_size = sizeof(their_addr);
@@ -460,11 +459,11 @@ namespace unorthodox {
 
         for (int i = 0; i < event_count; ++i)
         {
-            network::os::socket_type new_socket = ::accept(platform_get_socket_from_event(*(target + i)),
-                                                           reinterpret_cast<sockaddr*>(&their_addr),
-                                                           &addr_size);
+            os::socket_type new_socket = ::accept(platform_get_socket_from_event(*(target + i)),
+                                                  reinterpret_cast<sockaddr*>(&their_addr),
+                                                  &addr_size);
 
-            if (new_socket == network::os::socket_error)
+            if (new_socket == os::socket_error)
                continue;
 
             char s[INET6_ADDRSTRLEN];
@@ -483,19 +482,15 @@ namespace unorthodox {
     }
 
     template <typename SocketType> template <typename T> requires stl_compatible_container<T>
-    ssize_t socket<SocketType>::send(const T& data) const noexcept
+    tl::expected<size_t, error_code> socket<SocketType>::send(const T& data) const noexcept
     {
         if ((socket_ipv4 <= 0) && (socket_ipv6 <= 0))
-           return error::no_active_socket;
+            return error_code(error_domain::network_error, error_value::no_active_socket);
 
         const int socket_fd = socket_ipv4 == disabled ? socket_ipv6 : socket_ipv4;
 
         int sent = 0;
         int left = data.size();
-        /*
-        if constexpr (elems > 0)
-            left = sizeof(decltype(data[0])) * elems;
-        */
 
         int n = 0;
 
@@ -503,8 +498,8 @@ namespace unorthodox {
         {
            n = ::send(socket_fd, data.data() + sent, left, 0);
            if (n == -1)
-              return error::failed_to_send_data;
-           
+              return error_code(error_domain::network_error, error_value::failed_to_send_data);
+
            sent += n;
            left -= n;
         }
@@ -514,10 +509,10 @@ namespace unorthodox {
 
     // this probably requires a small refactor with the sent < total - duplication...
     template <typename SocketType> template <typename T>
-    ssize_t socket<SocketType>::send(const T& data) const noexcept
+    tl::expected<size_t, error_code> socket<SocketType>::send(const T& data) const noexcept
     {
         if ((socket_ipv4 <= 0) && (socket_ipv6 <= 0))
-            return error::no_active_socket;
+            return error_code(error_domain::network_error, error_value::no_active_socket);
 
         constexpr static int extent = std::extent_v<T>;
 
@@ -535,7 +530,7 @@ namespace unorthodox {
             {
                 n = ::send(socket_fd, &data, left, 0);
                 if (n == -1)
-                    return error::failed_to_send_data;
+                    return error_code(error_domain::network_error, error_value::failed_to_send_data);
 
                 sent += n;
                 left -= n;
@@ -543,7 +538,6 @@ namespace unorthodox {
         }
         else // we are dealing with an array of some kind
         {
-
             const int total = extent * sizeof(decltype(data[0]));
             int left = total;
 
@@ -551,7 +545,7 @@ namespace unorthodox {
             {
                 n = ::send(socket_fd, &data[sent], left, 0);
                 if (n == -1)
-                    return error::failed_to_send_data;
+                    return error_code(error_domain::network_error, error_value::failed_to_send_data);
 
                 sent += n;
                 left -= n;
@@ -568,7 +562,7 @@ namespace unorthodox {
 
         T rval{};
         if ((socket_ipv4 <= 0) && (socket_ipv6 <= 0))
-            return rval;
+            return tl::unexpected(error_code(error_domain::network_error, error_value::no_active_socket));
 
         const int socket_fd = socket_ipv4 == disabled ? socket_ipv6 : socket_ipv4;
         std::array<std::byte, recv_buffer_size> chunk;
@@ -587,8 +581,7 @@ namespace unorthodox {
             }
             else if (bytes < 0)
             {
-                // TODO: handle error somehow
-                return rval;
+                return tl::unexpected(error_code(error_domain::network_error, error_value::from_errno()));
             }
 
             rval.resize(total_recv + bytes);
