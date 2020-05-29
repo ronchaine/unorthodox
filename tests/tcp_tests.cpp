@@ -8,8 +8,8 @@ using namespace std::chrono_literals;
 
 void run_accept_server(uint16_t port)
 {
-    unorthodox::tcp_socket tcp_server;
-    unorthodox::tcp_socket connection;
+    unorthodox::net::tcp_socket tcp_server;
+    unorthodox::net::tcp_socket connection;
 
     tcp_server.listen(port);
     tcp_server.accept(connection, 2s);
@@ -19,12 +19,12 @@ void run_accept_server(uint16_t port)
 
 void run_echo_server(uint16_t port)
 {
-    unorthodox::tcp_socket tcp_server;
+    unorthodox::net::tcp_socket tcp_server;
     tcp_server.listen(port);
 }
 
 TEST_CASE("TCP") {
-    unorthodox::tcp_socket tcp_client;
+    unorthodox::net::tcp_socket tcp_client;
     std::thread server_thread([](){ run_accept_server(16015); });
 
     // Give the server time to start
@@ -32,7 +32,7 @@ TEST_CASE("TCP") {
 
     SUBCASE("simple hello") {
         tcp_client.connect("127.0.0.1", 16015);
-        std::string msg = tcp_client.recv().read_string();
+        std::string msg = tcp_client.recv<std::string>().value();
         REQUIRE(msg == "hello");
     }
     server_thread.join();

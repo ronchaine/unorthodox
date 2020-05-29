@@ -13,7 +13,7 @@ if meson.is_subproject() == false
   add_global_arguments(['-g', '-pg'], language : 'cpp')
 endif
 
-add_project_arguments(['-Wall', '-Wextra', '-Wno-missing-braces', '-pg'], language : 'cpp')
+add_project_arguments(['-Wall', '-Wextra', '-Wshadow', '-Wold-style-cast', '-Wno-missing-braces', '-Werror', '-pg'], language : 'cpp')
 
 compiler = meson.get_compiler('cpp').get_id()
 

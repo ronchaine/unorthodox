@@ -574,7 +574,7 @@ namespace unorthodox
             if (i < element_count)
             {
                 // copy / move construct
-                ::new(new_ptr + i) value_type(std::move(*(T*)((data() + i))));
+                ::new(new_ptr + i) value_type(std::move(*reinterpret_cast<T*>(((data() + i)))));
             } else {
                 // placement new
                 ::new(new_ptr + i) value_type{};

@@ -36,18 +36,19 @@ pipe_example = executable('pipe',
   dependencies: pipe_example_dependencies,
 )
 
-file_example_sources = [
-    'files_and_buffers.cpp',
-]
-
-file_example_dependencies = [
-]
-
-file_example = executable('files_and_buffers',
-  file_example_sources,
-  include_directories : unorthodox_include_path,
-  dependencies: file_example_dependencies,
-)
+# unfinished
+#file_example_sources = [
+#    'files_and_buffers.cpp',
+#]
+#
+#file_example_dependencies = [
+#]
+#
+#file_example = executable('files_and_buffers',
+#  file_example_sources,
+#  include_directories : unorthodox_include_path,
+#  dependencies: file_example_dependencies,
+#)
 
 
 # Network examples
