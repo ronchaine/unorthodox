@@ -532,16 +532,12 @@ namespace unorthodox::net {
     template <typename SocketType, bool Owner> template <typename T>
     tl::expected<size_t, error_code> socket<SocketType, Owner>::send(const T& data) const noexcept
     {
-        std::cout << "socket status, ipv4: " << socket_ipv4 << ", ipv6: " << socket_ipv6 << "\n";
-
         if (!os::is_active_socket(socket_ipv6) && !os::is_active_socket(socket_ipv4))
             return error_code(error_domain::network_error, error_value::no_active_socket);
 
         constexpr static int extent = std::extent_v<T>;
 
         const int socket_fd = socket_ipv4 == disabled ? socket_ipv6 : socket_ipv4;
-
-        std::cout << "sending to socket " << socket_fd << "\n";
 
         int sent = 0;
         int n = 0;
