@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <iostream>
 
+#include "deps/expected.hpp"
+
 namespace unorthodox
 {
     enum class error_domain : uint16_t

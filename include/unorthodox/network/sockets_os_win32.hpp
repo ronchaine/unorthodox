@@ -23,6 +23,11 @@ namespace unorthodox::net::os
                 bool listening_ipv6 : 1 = false;
             } status;
     };
+    /*
+    constexpr static socket_type uninitialised_socket_value   = 0;
+    constexpr static socket_type disabled_socket_value        = -2;
+    constexpr static socket_type invalid_socket               = -1;
+    */
 }
 
 #endif

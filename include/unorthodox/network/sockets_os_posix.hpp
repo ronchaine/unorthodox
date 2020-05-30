@@ -30,9 +30,14 @@ namespace unorthodox::net::os
 {
     using socket_type = int;
 
-    constexpr static socket_type uninitialised_socket_value   = 0;
+    constexpr static socket_type uninitialised_socket_value   = -3;
     constexpr static socket_type disabled_socket_value        = -2;
-    constexpr static socket_type socket_error                 = -1;
+    constexpr static socket_type invalid_socket               = -1;
+
+    inline bool is_active_socket(const socket_type& sock) noexcept
+    {
+        return sock >= 0;
+    }
 
     class socket_specifics
     {
@@ -48,8 +53,9 @@ namespace unorthodox::net::os
             socket_type platform_get_socket_from_event(platform_event_type& event) const noexcept;
 
             //event_count = epoll_wait(listen_fd, target, max_events, timeout.count());
-        private:
             socket_type listen_fd = uninitialised_socket_value;
+
+        private:
 
             #if defined(UNORTHODOX_OS_BSD)
             constexpr static size_t ipv4_index = 0;

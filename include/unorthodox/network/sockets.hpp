@@ -8,9 +8,6 @@
 #include <functional>
 #include <chrono>
 
-// until expected is in standard, use tl::expected
-#include <unorthodox/deps/expected.hpp>
-
 #if defined(HAS_CPPEVENTS)
 #include <cppevents/network.hpp>
 #endif
@@ -50,10 +47,9 @@
 #if defined(HAS_CPPEVENTS)
 namespace unorthodox::net::detail
 {
-    inline cppevents::event create_socket_listen_event(int fd);
-    inline cppevents::event create_socket_io_event(int fd);
-
-    inline cppevents::network_event create_disconnect_event(int fd);
+    inline cppevents::event create_socket_listen_event(os::socket_type fd);
+    inline cppevents::event create_socket_io_event(os::socket_type fd);
+    inline cppevents::network_event create_disconnect_event(os::socket_type fd);
 }
 #endif
 
@@ -61,14 +57,19 @@ namespace unorthodox::net
 {
     namespace helpers
     {
-       inline int deduce_protocol_from_address(const char* s)
-       {
-           addrinfo* result;
-           getaddrinfo(s, nullptr, nullptr, &result);
-           int rval = result->ai_family;
-           freeaddrinfo(result);
-           return rval;
-       }
+        inline int deduce_protocol_from_address(const char* s)
+        {
+            addrinfo* result;
+            getaddrinfo(s, nullptr, nullptr, &result);
+            int rval = result->ai_family;
+            freeaddrinfo(result);
+            return rval;
+        }
+
+        inline int deduce_protocol_from_address(const std::string& s)
+        {
+            return deduce_protocol_from_address(s.c_str());
+        }
 
         inline void* get_in_addr(struct sockaddr* sa)
         {
@@ -128,7 +129,15 @@ namespace unorthodox::net
     };
     #endif
 
-    template <typename Socket>
+    #if defined(HAS_CPPEVENTS)
+    enum class fd_role {
+        listening_socket,
+        io_socket,
+        unknown,
+    };
+    #endif
+
+    template <typename Socket, bool Owning = true>
     class socket : public Socket, os::socket_specifics
     {
         constexpr static int default_backlog_size = 20;
@@ -142,7 +151,7 @@ namespace unorthodox::net
 
             size_t mtu_size = 1200;
 
-            socket() noexcept;
+            socket() noexcept requires (Owning == true);
             socket(os::socket_type in_socket_fd, int protocol) noexcept;
 
             socket(socket&& other) noexcept;
@@ -175,10 +184,12 @@ namespace unorthodox::net
             tl::expected<T, error_code> recv() noexcept;
 
             #if defined(HAS_CPPEVENTS)
-            explicit socket(const cppevents::network_event&) noexcept;
-            void connect_events(cppevents::event_queue& queue, int state);
+            constexpr static bool cppevent_unorthodox_socket = true;
 
-            static socket get_socket_from_event(const cppevents::network_event&) noexcept;
+            explicit socket(const cppevents::network_event&) noexcept;
+            void connect_events(cppevents::event_queue& queue, fd_role state);
+
+            static socket<Socket, false> get_socket_from_event(const cppevents::network_event&) noexcept;
             #endif
 
         private:
@@ -190,14 +201,18 @@ namespace unorthodox::net
 
     using udp_socket = unorthodox::net::socket<udp_socket_details>;
     using tcp_socket = unorthodox::net::socket<tcp_socket_details>;
+    
+    using udp_socket_view = unorthodox::net::socket<udp_socket_details, false>;
+    using tcp_socket_view = unorthodox::net::socket<tcp_socket_details, false>;
+
     #if defined(UNORTHODOX_SSL_PROVIDER)
     using ssl_socket = unorthodox::net::socket<ssl_socket_details>;
     #endif
 }
 
 namespace unorthodox::net {
-    template <typename SocketType>
-    socket<SocketType>::socket() noexcept
+    template <typename SocketType, bool Own>
+    socket<SocketType, Own>::socket() noexcept requires (Own == true)
     {
         // openssl stuff should be handled by ssl_socket_details
 
@@ -206,13 +221,13 @@ namespace unorthodox::net {
         {
             this->tcp_nodelay.on_toggle([&](bool& state, bool requested_state) {
                 int flag = requested_state ? 1 : 0;
-                if (socket_ipv4 > 0)
+                if (os::is_active_socket(socket_ipv4))
                 {
                     int result = setsockopt(socket_ipv4, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&flag), sizeof(int));
                     if (result >= 0)
                         state = requested_state;
                 }
-                if (socket_ipv6 > 0)
+                if (os::is_active_socket(socket_ipv6))
                 {
                     int result = setsockopt(socket_ipv6, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&flag), sizeof(int));
                     if (result >= 0)
@@ -222,13 +237,13 @@ namespace unorthodox::net {
 
             this->tcp_quickack.on_toggle([&](bool& state, bool requested_state) {
                 int flag = requested_state ? 1 : 0;
-                if (socket_ipv4 > 0)
+                if (os::is_active_socket(socket_ipv4))
                 {
                     int result = setsockopt(socket_ipv4, IPPROTO_TCP, TCP_QUICKACK, reinterpret_cast<char*>(&flag), sizeof(int));
                     if (result >= 0)
                         state = requested_state;
                 }
-                if (socket_ipv6 > 0)
+                if (os::is_active_socket(socket_ipv6))
                 {
                     int result = setsockopt(socket_ipv6, IPPROTO_TCP, TCP_QUICKACK, reinterpret_cast<char*>(&flag), sizeof(int));
                     if (result >= 0)
@@ -238,31 +253,32 @@ namespace unorthodox::net {
         }
     }
 
-    template <typename SocketType>
-    void socket<SocketType>::close() noexcept
+    template <typename SocketType, bool Owner>
+    void socket<SocketType, Owner>::close() noexcept
     {
-        if (socket_ipv6 > 0)
+        if (os::is_active_socket(socket_ipv6))
             ::close(socket_ipv6);
-        if (socket_ipv4 > 0)
+        if (os::is_active_socket(socket_ipv4))
             ::close(socket_ipv4);
 
         stop_listening();
     }
 
-    template <typename SocketType>
-    socket<SocketType>::~socket()
+    template <typename SocketType, bool Owner>
+    socket<SocketType, Owner>::~socket()
     {
-        close();
+        if constexpr(Owner == true)
+            close();
     }
 
-    template <typename SocketType>
-    socket<SocketType>::socket(socket&& other) noexcept : os::socket_specifics(std::move(other))
+    template <typename SocketType, bool Owner>
+    socket<SocketType, Owner>::socket(socket&& other) noexcept : os::socket_specifics(std::move(other))
     {
         *this = std::move(other);
     }
 
-    template <typename SocketType>
-    socket<SocketType>& socket<SocketType>::operator=(socket&& other) noexcept
+    template <typename SocketType, bool Owner>
+    socket<SocketType, Owner>& socket<SocketType, Owner>::operator=(socket&& other) noexcept
     {
         if (this == &other)
             return *this;
@@ -274,12 +290,17 @@ namespace unorthodox::net {
 
         other.socket_ipv6 = other.socket_ipv6 == disabled ? disabled : uninitialised;
         other.socket_ipv4 = other.socket_ipv4 == disabled ? disabled : uninitialised;
-        
+
+        other.socket_ipv4 = other.socket_ipv4 == disabled ? disabled : uninitialised;
+
+        this->listen_fd = other.listen_fd;
+        other.listen_fd = other.listen_fd == disabled ? disabled : uninitialised;
+
         return *this;
     }
 
-    template <typename SocketType>
-    tl::expected<os::socket_type, error_code> socket<SocketType>::get_socket(const char* host, uint16_t port, int family) noexcept
+    template <typename SocketType, bool Owning>
+    tl::expected<os::socket_type, error_code> socket<SocketType, Owning>::get_socket(const char* host, uint16_t port, int family) noexcept
     {
         addrinfo    hints{};
         addrinfo*   server_info = nullptr;
@@ -302,18 +323,18 @@ namespace unorthodox::net {
 
         for (info = server_info; info != nullptr; info = info->ai_next)
         {
-            if ((socket_fd = ::socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == os::socket_error)
+            if ((socket_fd = ::socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == os::invalid_socket)
                 continue;
 
             if (family == AF_INET6)
             {
-                if (setsockopt(socket_fd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(int)) == os::socket_error)
+                if (setsockopt(socket_fd, IPPROTO_IPV6, IPV6_V6ONLY, &yes, sizeof(int)) == os::invalid_socket)
                 {
                     freeaddrinfo(server_info);
                     return tl::unexpected(error_code(error_domain::network_error, error_code::setsockopt_failed));
                 }
             }
-            if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == os::socket_error)
+            if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == os::invalid_socket)
             {
                 freeaddrinfo(server_info);
                 return tl::unexpected(error_code(error_domain::network_error, error_code::setsockopt_failed));
@@ -321,13 +342,13 @@ namespace unorthodox::net {
 
             if (host == nullptr)
             {
-                if (::bind(socket_fd, info->ai_addr, info->ai_addrlen) == os::socket_error)
+                if (::bind(socket_fd, info->ai_addr, info->ai_addrlen) == os::invalid_socket)
                 {
                     ::close(socket_fd);
                     continue;
                 }
             } else {
-                if (::connect(socket_fd, info->ai_addr, info->ai_addrlen) == os::socket_error)
+                if (::connect(socket_fd, info->ai_addr, info->ai_addrlen) == os::invalid_socket)
                 {
                     ::close(socket_fd);
                     continue;
@@ -343,8 +364,8 @@ namespace unorthodox::net {
         return socket_fd;
     }
 
-    template <typename SocketType>
-    socket<SocketType>::socket(os::socket_type in_socket_fd, int protocol) noexcept
+    template <typename SocketType, bool Owner>
+    socket<SocketType, Owner>::socket(os::socket_type in_socket_fd, int protocol) noexcept
     {
         if (protocol == AF_INET)
         {
@@ -365,10 +386,10 @@ namespace unorthodox::net {
         // TODO: Init SSL here
     }
 
-    template <typename SocketType>
-    error_code socket<SocketType>::open(const char* host, uint16_t port) noexcept
+    template <typename SocketType, bool Owner>
+    error_code socket<SocketType, Owner>::open(const char* host, uint16_t port) noexcept
     {
-        if ((socket_ipv6 > 0) || (socket_ipv4 > 0))
+        if (os::is_active_socket(socket_ipv6) || os::is_active_socket(socket_ipv4))
             return error_code(error_domain::network_error, error_value::socket_already_open);
 
         if (host == nullptr)
@@ -381,25 +402,25 @@ namespace unorthodox::net {
                 socket_ipv4 = get_socket(host, port, AF_INET).value_or(disabled);
         }
 
-        if ((socket_ipv6 >= 0) || (socket_ipv4 >= 0))
+        if (os::is_active_socket(socket_ipv6) || os::is_active_socket(socket_ipv4))
             return error_code::success;
 
         return error_code(error_domain::network_error, error_value::cannot_open_socket);
     }
 
-    template <typename SocketType>
-    error_code socket<SocketType>::connect(const char* host, uint16_t port) noexcept
+    template <typename SocketType, bool Owner>
+    error_code socket<SocketType, Owner>::connect(const char* host, uint16_t port) noexcept
     {
         return open(host, port);
     }
 
-    template <typename SocketType>
-    error_code socket<SocketType>::listen(uint16_t port, int backlog_size) noexcept requires (SocketType::type == SOCK_STREAM)
+    template <typename SocketType, bool Owner>
+    error_code socket<SocketType, Owner>::listen(uint16_t port, int backlog_size) noexcept requires (SocketType::type == SOCK_STREAM)
     {
         error_code status = open(nullptr, port);
         if (status) return status;
 
-        if (socket_ipv4 > 0)
+        if (os::is_active_socket(socket_ipv4))
         {
             status = platform_listen_socket(port, backlog_size, socket_ipv4, AF_INET);
             if (status.code == error_value::could_not_listen || status.code == error_value::poll_error)
@@ -411,7 +432,7 @@ namespace unorthodox::net {
                 return status;
         }
 
-        if (socket_ipv6 > 0)
+        if (os::is_active_socket(socket_ipv6))
         {
             status = platform_listen_socket(port, backlog_size, socket_ipv6, AF_INET6);
             if (status.code == error_value::could_not_listen || status.code == error_value::poll_error)
@@ -426,13 +447,13 @@ namespace unorthodox::net {
         return status;
     }
 
-    template <typename SocketType> template <typename Output> requires (SocketType::type == SOCK_STREAM)
-    error_code socket<SocketType>::accept(Output& out_target, std::chrono::milliseconds timeout) noexcept
+    template <typename SocketType, bool Owner> template <typename Output> requires (SocketType::type == SOCK_STREAM)
+    error_code socket<SocketType, Owner>::accept(Output& out_target, std::chrono::milliseconds timeout) noexcept
     {
         static_assert(is_stl_like_container<Output>() || std::is_same<Output&, socket<SocketType>&>::value,
                 "Output parameter needs to be either socket reference or stl-compatible array of such");
 
-        if ((socket_ipv6 < 0) && (socket_ipv4 <= 0))
+        if (!os::is_active_socket(socket_ipv6) && !os::is_active_socket(socket_ipv4))
             return error_code(error_domain::network_error, error_value::no_active_socket);
 
         sockaddr_storage their_addr;
@@ -463,7 +484,7 @@ namespace unorthodox::net {
                                                   reinterpret_cast<sockaddr*>(&their_addr),
                                                   &addr_size);
 
-            if (new_socket == os::socket_error)
+            if (new_socket == os::invalid_socket)
                continue;
 
             char s[INET6_ADDRSTRLEN];
@@ -481,10 +502,10 @@ namespace unorthodox::net {
         return 0;
     }
 
-    template <typename SocketType> template <typename T> requires stl_compatible_container<T>
-    tl::expected<size_t, error_code> socket<SocketType>::send(const T& data) const noexcept
+    template <typename SocketType, bool Owner> template <typename T> requires stl_compatible_container<T>
+    tl::expected<size_t, error_code> socket<SocketType, Owner>::send(const T& data) const noexcept
     {
-        if ((socket_ipv4 <= 0) && (socket_ipv6 <= 0))
+        if (!os::is_active_socket(socket_ipv6) && !os::is_active_socket(socket_ipv4))
             return error_code(error_domain::network_error, error_value::no_active_socket);
 
         const int socket_fd = socket_ipv4 == disabled ? socket_ipv6 : socket_ipv4;
@@ -508,15 +529,19 @@ namespace unorthodox::net {
     }
 
     // this probably requires a small refactor with the sent < total - duplication...
-    template <typename SocketType> template <typename T>
-    tl::expected<size_t, error_code> socket<SocketType>::send(const T& data) const noexcept
+    template <typename SocketType, bool Owner> template <typename T>
+    tl::expected<size_t, error_code> socket<SocketType, Owner>::send(const T& data) const noexcept
     {
-        if ((socket_ipv4 <= 0) && (socket_ipv6 <= 0))
+        std::cout << "socket status, ipv4: " << socket_ipv4 << ", ipv6: " << socket_ipv6 << "\n";
+
+        if (!os::is_active_socket(socket_ipv6) && !os::is_active_socket(socket_ipv4))
             return error_code(error_domain::network_error, error_value::no_active_socket);
 
         constexpr static int extent = std::extent_v<T>;
 
         const int socket_fd = socket_ipv4 == disabled ? socket_ipv6 : socket_ipv4;
+
+        std::cout << "sending to socket " << socket_fd << "\n";
 
         int sent = 0;
         int n = 0;
@@ -555,13 +580,13 @@ namespace unorthodox::net {
     }
 
     // UNSTABLE
-    template <typename SocketType> template <typename T> requires stl_compatible_container<T>
-    tl::expected<T, error_code> socket<SocketType>::recv() noexcept
+    template <typename SocketType, bool Owner> template <typename T> requires stl_compatible_container<T>
+    tl::expected<T, error_code> socket<SocketType, Owner>::recv() noexcept
     {
         constexpr static int no_flags = 0;
 
         T rval{};
-        if ((socket_ipv4 <= 0) && (socket_ipv6 <= 0))
+        if (!os::is_active_socket(socket_ipv6) && !os::is_active_socket(socket_ipv4))
             return tl::unexpected(error_code(error_domain::network_error, error_value::no_active_socket));
 
         const int socket_fd = socket_ipv4 == disabled ? socket_ipv6 : socket_ipv4;
@@ -598,5 +623,150 @@ namespace unorthodox::net {
         return rval;
     }
 }
+
+#if defined(HAS_CPPEVENTS)
+namespace unorthodox::net
+{
+    namespace detail
+    {
+        inline cppevents::event create_socket_listen_event(os::socket_type fd)
+        {
+            // we do not need this
+            (void) fd;
+
+            cppevents::network_event ev;
+
+            sockaddr_storage their_addr;
+            socklen_t addr_size = sizeof(their_addr);
+
+            os::socket_type actual_socket_fd = os::invalid_socket;
+
+            // LINUX-ONLY, move to sockets_os_posix.hpp
+            epoll_event event;
+            epoll_wait(fd, &event, 1, -1);
+            actual_socket_fd = event.data.fd;
+
+            os::socket_type new_fd = ::accept(actual_socket_fd, reinterpret_cast<sockaddr*>(&their_addr), &addr_size);
+            if (new_fd == os::invalid_socket)
+                return ev;
+
+            char s[INET6_ADDRSTRLEN];
+            inet_ntop(their_addr.ss_family,
+                      helpers::get_in_addr(reinterpret_cast<sockaddr*>(&their_addr)),
+                      s, sizeof(s));
+
+            ev.type = cppevents::network_event::new_connection;
+            ev.peer_address = s;
+            ev.sock_handle = new_fd;
+
+            if (their_addr.ss_family == AF_INET)
+                ev.peer_port = ntohs(reinterpret_cast<sockaddr_in*>(&their_addr)->sin_port);
+            else if (their_addr.ss_family == AF_INET6)
+                ev.peer_port = ntohs(reinterpret_cast<sockaddr_in6*>(&their_addr)->sin6_port);
+
+            return std::move(ev);
+        }
+
+        inline cppevents::event create_socket_io_event(os::socket_type fd)
+        {
+            cppevents::network_event ev;
+            ev.type = cppevents::network_event::socket_ready;
+            ev.sock_handle = fd;
+
+            sockaddr_storage their_addr;
+            socklen_t addr_size = sizeof(their_addr);
+
+            getpeername(fd, reinterpret_cast<sockaddr*>(&their_addr), &addr_size);
+            char s[INET6_ADDRSTRLEN];
+            inet_ntop(their_addr.ss_family,
+                      helpers::get_in_addr(reinterpret_cast<sockaddr*>(&their_addr)),
+                      s, sizeof(s));
+
+            ev.peer_address = s;
+            if (their_addr.ss_family == AF_INET)
+                ev.peer_port = ntohs(reinterpret_cast<sockaddr_in*>(&their_addr)->sin_port);
+            else if (their_addr.ss_family == AF_INET6)
+                ev.peer_port = ntohs(reinterpret_cast<sockaddr_in6*>(&their_addr)->sin6_port);
+
+            return std::move(ev);
+        }
+
+        inline cppevents::network_event create_disconnect_event(os::socket_type fd)
+        {
+            cppevents::network_event ev;
+            ev.type = cppevents::network_event::connection_closed;
+            ev.sock_handle = fd;
+
+            sockaddr_storage their_addr;
+            socklen_t addr_size = sizeof(their_addr);
+
+            getpeername(fd, reinterpret_cast<sockaddr*>(&their_addr), &addr_size);
+            char s[INET6_ADDRSTRLEN];
+            inet_ntop(their_addr.ss_family,
+                      helpers::get_in_addr(reinterpret_cast<sockaddr*>(&their_addr)),
+                      s, sizeof(s));
+
+            ev.peer_address = s;
+
+            if (their_addr.ss_family == AF_INET)
+                ev.peer_port = ntohs(reinterpret_cast<sockaddr_in*>(&their_addr)->sin_port);
+            else if (their_addr.ss_family == AF_INET6)
+                ev.peer_port = ntohs(reinterpret_cast<sockaddr_in6*>(&their_addr)->sin6_port);
+
+            return ev;
+        }
+    }
+
+    // cppevents-enabled socket constructor
+    template <typename SocketType, bool Owner>
+    socket<SocketType, Owner>::socket(const cppevents::network_event& ev) noexcept
+        : socket(ev.sock_handle, helpers::deduce_protocol_from_address(ev.peer_address))
+    {}
+
+    template <typename SocketType, bool Owner>
+    socket<SocketType, false> socket<SocketType, Owner>::get_socket_from_event(const cppevents::network_event& ev) noexcept
+    {
+        return socket<SocketType, false>(ev.sock_handle, helpers::deduce_protocol_from_address(ev.peer_address));
+    }
+
+    template <typename SocketType, bool Owner>
+    void socket<SocketType, Owner>::connect_events(cppevents::event_queue& queue, fd_role state)
+    {
+        static_assert(Owner == true, "Currently cannot connect events to nonowning socket");
+        switch(state)
+        {
+            case fd_role::listening_socket:
+                queue.add_native_source(this->listen_fd, detail::create_socket_listen_event);
+                break;
+            case fd_role::io_socket:
+                if (os::is_active_socket(socket_ipv4))
+                    queue.add_native_source(socket_ipv4, detail::create_socket_io_event);
+                if (os::is_active_socket(socket_ipv6))
+                    queue.add_native_source(socket_ipv6, detail::create_socket_io_event);
+                break;
+            case fd_role::unknown:
+                break;
+        }
+    }
+}
+
+namespace cppevents
+{
+    // specialised overloads for templates
+    template <typename Source, typename Sock> 
+        requires (std::is_same_v<typename Source::event_type, network_event> && Sock::cppevent_unorthodox_socket)
+    error_code add_source(
+        Sock& socket,
+        event_queue& queue = default_queue)
+    {
+        if constexpr (std::is_same_v<Source, cppevents::socket_listener>)
+            socket.connect_events(queue, unorthodox::net::fd_role::listening_socket);
+        else if constexpr (std::is_same_v<Source, cppevents::socket_io_event>)
+            socket.connect_events(queue, unorthodox::net::fd_role::io_socket);
+        return error_code::success;
+    }
+}
+
+#endif
 
 #endif
