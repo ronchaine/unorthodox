@@ -5,13 +5,18 @@ go-to solution to use.  It shouldn't be a full-scale replacement for any specifi
 library, but to give reasonable default that can be used if more heavyweight
 libraries are undesirable.
 
+Dependencies
+============
+* A compiler that understands C++20
+* tl::expected (header provided in-repo, will be replaced with std::expected when/if possible)
+* optionally libcppevents
+
 Goals
 =====
 * Similar style to the standard library
 * Ease of use
-* Cross-platform (should work at least on Windows, Linux with glibc/musl and FreeBSD)
+* Cross-platform (should work at least on Windows, Linux with glibc/musl, FreeBSD and OpenBSD)
 * Usable by anybody with C++20-enabled compiler
-* ABI stability (once we're at a point its reasonable to freeze it)
 
 Scope
 =====
@@ -21,7 +26,7 @@ Unorthodox should consist of
 * Networking
 * Mathematics
 
-All of which provide high-level interface to commom functionality, they do not need to replace
+All of which provide high-level interface to common functionality, they do not need to replace
 libraries specifically meant for those purposes.  (We are not making another Eigen and add some
 extras in the top of it!)
 
@@ -55,8 +60,10 @@ Event system
 Compiling
 =========
 The codebase uses some C++20 features, such as Concepts, and will use more of them,
-especially <=> (and probably modules) as they become available in clang. So currently
-a custom-built version of clang is required to compile.  MSVC's next version should
-be able to build this as well.
+especially <=> (and probably modules) as they become available in clang.
 
 Later on, plan is to support at least all of the big three compilers
+
+Currently the project uses meson build system to create the library files, cmake
+support is probably a thing I want to look at, but it's not a priority, most of
+Unorthodox can be used by just including the headers
