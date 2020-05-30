@@ -597,6 +597,10 @@ namespace unorthodox::net {
             ssize_t bytes = ::recv(socket_fd, chunk.data(), recv_buffer_size, multiple_chunks ? no_flags | MSG_DONTWAIT : no_flags);
             if (bytes == 0)
             {
+                #if defined(HAS_CPPEVENTS)
+                cppevents::network_event dc = detail::create_disconnect_event(socket_fd);
+                send_event(dc);
+                #endif
                 close();
                 break;
             }
