@@ -71,7 +71,7 @@ namespace unorthodox
     {
         union { T f; match_uint_size<T> i; } u{value};
 
-        const int e = (const int)(u.i >> detail::fp_info<T>::fraction_bits & detail::fp_info<T>::exponent_mask)
+        const int e = static_cast<const int>(u.i >> detail::fp_info<T>::fraction_bits & detail::fp_info<T>::exponent_mask)
                     - detail::fp_info<T>::exponent_magic;
 
         if (e >= detail::fp_info<T>::fraction_bits)

@@ -262,7 +262,7 @@ namespace unorthodox
         if constexpr(std::is_integral<T>::value)
             return static_cast<T>(value >> fractional_bits);
         else if constexpr(std::is_floating_point<T>::value)
-            return static_cast<T>((T)value / (1ull << fractional_bits));
+            return static_cast<T>(static_cast<T>(value) / (1ull << fractional_bits));
 
         static_assert(std::is_integral<T>::value || std::is_floating_point<T>::value, "conversion to unknown arithmetic type");
     }

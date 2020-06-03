@@ -12,7 +12,7 @@ namespace unorthodox
     constexpr inline bool big_endian_system() noexcept
     {
         uint16_t check = 0xbe1e;
-        return (uint8_t)*(&check) == 0xbe;
+        return static_cast<uint8_t>(*(&check)) == 0xbe;
     }
 
     template <typename T>
@@ -55,7 +55,8 @@ namespace unorthodox
             {
                 const size_t e_count = static_cast<size_t>(last - first);
                 if (e_count)
-                    std::memmove((void*)&(*dest), (void*)&(*first), e_count * sizeof(typename OutputIt::value_type));
+                    std::memmove(reinterpret_cast<void*>(&(*dest)),
+                                 reinterpret_cast<void*>(&(*first)), e_count * sizeof(typename OutputIt::value_type));
 
                 return dest + e_count;
             } else {
