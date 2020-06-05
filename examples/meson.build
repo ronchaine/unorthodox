@@ -52,3 +52,12 @@ pipe_example = executable('pipe',
 
 
 # Network examples
+cppevents_socket_example_sources = [
+  'cppevents-server.cpp',
+]
+
+cppevents_socket_example = executable('socket_server',
+  cppevents_socket_example_sources,
+  include_directories : unorthodox_include_path,
+  dependencies: cppevents_dep,
+)

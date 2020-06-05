@@ -9,7 +9,6 @@
 
 namespace unorthodox
 {
-// todo: translate win32 commands
 #ifdef _WIN32
 #else
 #endif
@@ -98,13 +97,14 @@ namespace unorthodox
             // do not allow straight constructing
             file() = default;
 
-            int fd: 31 = error::uninitialised_value;
+            int fd: 31 = error_code::uninitialised_value;
             bool mmapped : 1 = false;
     };
 }
 
 namespace unorthodox
 {
+    /*
     inline int file::translate_flags(flagset flags)
     {
         int rval = 0;
@@ -150,6 +150,7 @@ namespace unorthodox
             ::close(fd);
         fd = -1;
     }
+    */
 }
 
 #endif

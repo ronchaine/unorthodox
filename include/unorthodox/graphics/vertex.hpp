@@ -1,118 +1,249 @@
 #ifndef UNORTHODOX_VERTEX_HPP
 #define UNORTHODOX_VERTEX_HPP
 
-#include <cstdint>
+#include <unorthodox/colour.hpp>
+
 #include <vector>
 
-#include "../buffer.hpp"
+#include <iostream>
 
-namespace unorthodox::detail
+/*
+ * "vertex type" is just a amalgamation of different vertex components
+ * with a few utility functions thrown in.  Components are defined in
+ * this namespace.  They need to have "component_type" type alias,
+ * "components" as the count of components in the component (e.g.
+ * red-green-blue is 3 components inside the component), size reserved
+ * for a single component e.g. sizeof(component_type).  And if the
+ * component holds more than one set of the values (e.g. more than
+ * one set of texture coordinates) in array_size
+ */
+namespace unorthodox::graphics::vertex_components
 {
-    template <typename T, uint32_t Pos_components> struct vertex_position_component; // { std::array<T, Pos_components> coord; };
-
-    template <typename T> struct vertex_position_component<T,0> {};
-    template <typename T> struct vertex_position_component<T,1> { T x; };
-    template <typename T> struct vertex_position_component<T,2> { T x, y; };
-    template <typename T> struct vertex_position_component<T,3> { T x, y, z; };
-    template <typename T> struct vertex_position_component<T,4> { T x, y, z, w; };
-
-    template <uint32_t UV_count> struct vertex_texture_coordinate_component
+    /*
+     * Information structure for spatial coordinates
+     */
+    template <typename T, uint32_t Dimension> struct spatial_info
     {
-        uint16_t u[UV_count];
-        uint16_t v[UV_count];
+        using component_type = T;
+        
+        constexpr static uint32_t components    = Dimension;
+        constexpr static uint32_t component_size = sizeof(component_type);
+        constexpr static uint32_t array_size    = 0;
+        constexpr static bool     allow_padding = true;
     };
-    template <> struct vertex_texture_coordinate_component<1>
+
+    /*
+     * Position component, gives vertex x,y,z,w member variables depending
+     * on the dimensionality of the type
+     */
+    template <typename T, uint32_t Dimension> struct position;
+
+    template <typename T> struct position<T, 0> : public spatial_info<T, 0> {};
+    template <typename T> struct position<T, 1> : public spatial_info<T, 1> { T x; };
+    template <typename T> struct position<T, 2> : public spatial_info<T, 2> { T x; T y; };
+    template <typename T> struct position<T, 3> : public spatial_info<T, 3> { T x; T y; T z; };
+    template <typename T> struct position<T, 4> : public spatial_info<T, 4> { T x; T y; T z; T w; };
+
+    /*
+     * Texture coordinate component, can hold more than
+     * one set of texture coordinates
+     */
+    template <uint32_t UV_count> struct texcoord_info
+    {
+        using component_type = uint16_t;
+        constexpr static uint32_t components = 2;
+        constexpr static uint32_t component_size = sizeof(component_type);
+        constexpr static uint32_t array_size = UV_count;
+        constexpr static bool     allow_padding = false;
+    };
+    template <uint32_t UV_count> struct texture_coordinates : public texcoord_info<UV_count>
+    {
+        std::array<uint16_t, UV_count> u;
+        std::array<uint16_t, UV_count> v;
+    };
+    template <> struct texture_coordinates<1> : public texcoord_info<1>
     {
         uint16_t u;
         uint16_t v;
     };
-    template <> struct vertex_texture_coordinate_component<0> {};
+    template <> struct texture_coordinates<0> {};
+}
 
-    struct vertex_rgba_colour_component
+namespace unorthodox::graphics
+{
+    class vertex_array;
+    struct vertex_batch;
+
+    template <typename T> concept any_vertex_type = requires(T t)
     {
-        uint8_t r = 0xff;
-        uint8_t g = 0xff;
-        uint8_t b = 0xff;
-        uint8_t a = 0xff;
+        true;
+    };
 
-        void set_colour(uint32_t rgba)
+    /*
+     * Describes vertex component's layout
+     */
+    struct vertex_component_layout
+    {
+        uint8_t components = 0;
+        uint8_t component_size = 0;
+        uint16_t count = 0;
+    };
+
+    /*
+     * A set of vertices with same features, so they can be rendered
+     * with one call
+     */
+    // TODO: constexpr when C++20 support improves
+    struct vertex_batch
+    {
+        vertex_batch() = default;
+
+        uint8_t vertex_size;
+
+        std::vector<vertex_component_layout> component_layouts;
+        std::vector<std::byte> data;
+    };
+
+    inline std::ostream& operator<<(std::ostream& stream, const vertex_batch&)
+    {
+        return stream;
+    }
+
+    /*
+     * Vertex template type.  Basically just inherits all the components
+     * requested and has some functions to make usage easier
+     */
+    template <typename... Other_Components>
+    struct vertex : public Other_Components...
+    {
+        // TODO: constexpr when C++20 support improves
+        static vertex_batch create_suitable_batch() noexcept;
+        static bool is_batch_suitable(const vertex_batch&) noexcept;
+
+        constexpr size_t serialise_to(char* target, const vertex_batch& batch) const noexcept;
+    };
+
+    template <typename... Other_Components>
+    vertex_batch vertex<Other_Components...>::create_suitable_batch() noexcept
+    {
+        constexpr static std::array<uint8_t, sizeof...(Other_Components)> layout_components = { Other_Components::components... };
+        constexpr static std::array<uint8_t, sizeof...(Other_Components)> layout_component_sizes = { Other_Components::component_size... };
+        constexpr static std::array<uint16_t, sizeof...(Other_Components)> layout_array_sizes = { Other_Components::array_size... };
+
+        vertex_batch batch;
+
+        batch.vertex_size = sizeof(vertex<Other_Components...>);
+        batch.component_layouts.reserve(sizeof...(Other_Components));
+
+        for (size_t i = 0; i < sizeof...(Other_Components); ++i)
+            batch.component_layouts.emplace_back(vertex_component_layout{
+                layout_components[i],
+                layout_component_sizes[i],
+                layout_array_sizes[i]
+            });
+
+        return batch;
+    }
+
+    template <typename... Other_Components>
+    bool vertex<Other_Components...>::is_batch_suitable(const vertex_batch& batch) noexcept
+    {
+        constexpr static std::array<uint8_t, sizeof...(Other_Components)> layout_components = { Other_Components::components... };
+        constexpr static std::array<uint8_t, sizeof...(Other_Components)> layout_component_sizes = { Other_Components::component_size... };
+        constexpr static std::array<uint16_t, sizeof...(Other_Components)> layout_array_sizes = { Other_Components::array_size... };
+        constexpr static std::array<bool, sizeof...(Other_Components)> component_allows_padding = { Other_Components::allow_padding... };
+
+        for (size_t i = 0; i < sizeof...(Other_Components); ++i)
         {
-            r = rgba >> 24;
-            g = (0x00ff0000 & rgba) >> 16;
-            b = (0x0000ff00 & rgba) >> 8;
-            a = 0xff & rgba;
+            std::cout << "type details (" << i << ")\n   components:" << static_cast<int>(layout_components[i]) << "\n";
+            std::cout << "   size / component: " << static_cast<int>(layout_component_sizes[i]) << "\n";
+            std::cout << "   count: " << layout_array_sizes[i] << "\n";
         }
-    };
 
-    struct vertex_hsv_shift_component
+        /*
+        vertex_batch() = default;
+
+        uint8_t vertex_size;
+
+        std::vector<vertex_component_layout> component_layouts;
+        std::vector<std::byte> data;
+        */
+
+        // Require there are same amount of components and the same vertex size
+        if (batch.vertex_size != sizeof(vertex<Other_Components...>))
+                return false;
+        if (batch.component_layouts.size() != sizeof...(Other_Components))
+                return false;
+
+        for (constexpr size_t i = 0; i < sizeof...(Other_Components); ++i)
+        {
+            using op = std::conditional_t<component_allows_padding[i], std::less<uint16_t>, std::not_equal_to<uint16_t>>;
+//            if (layout_components[i] != 
+        }
+
+        return true;
+    }
+
+    template <typename... Other_Components>
+    constexpr size_t vertex<Other_Components...>::serialise_to(char* target, const vertex_batch& batch_info) const noexcept
     {
-        float hue           = 0.0f;
-        float saturation    = 0.0f;
-        float value         = 0.0f;
-    };
+        std::cout << "batch info:\n"
+                  << " vertex size: " << static_cast<int>(batch_info.vertex_size) << "B\n";
 
-    template <typename T> struct vertex_empty_component {};
+        target[0] = 0;
 
-    template <uint32_t Flags> struct vertex_extra_components {};
-}
+        return 0;
+    }
 
-namespace unorthodox
-{
-    constexpr static uint32_t VERTEX_RGBA_COLOUR    = 0x01;
-    constexpr static uint32_t VERTEX_HSV_SHIFT      = 0x02;
-
-    constexpr static uint32_t VERTEX_1D             = 2;
-    constexpr static uint32_t VERTEX_2D             = 2;
-    constexpr static uint32_t VERTEX_3D             = 3;
-
-    constexpr static uint32_t NO_TEXTURES           = 0;
-}
-
-namespace unorthodox
-{
-    template <typename T> concept vertex_type = requires(T t)
-    {
-        // needs to know what type dimension components are
-        typename T::component_type;
-
-        // how many position components
-        { T::dim };
-
-        // how many texture coordinate pairs
-        { T::uv_count };
-
-        // extra features defined by this header
-        { T::feature_flags };
-    };
-}
-
-namespace unorthodox
-{
-    template <typename T, uint32_t Pos_count, uint32_t UV_count, uint32_t Flags = VERTEX_RGBA_COLOUR>
-    struct vertex : public detail::vertex_position_component<float, Pos_count>,
-                    public detail::vertex_texture_coordinate_component<UV_count>,
-                    public detail::vertex_extra_components<Flags>
-    {
-        constexpr static uint32_t rgba_colour   = 0x01;
-
-        constexpr static uint32_t dim           = Pos_count;
-        constexpr static uint32_t uv_count      = UV_count;
-        constexpr static uint32_t feature_flags = Flags;
-    };
-
-    // constexpr this class when possible
+    /*
+     * Set of vertex batches that can be sent to the GPU.  The structure
+     * divides the vertices given to different batches.
+     */
     class vertex_array
     {
         public:
-            vertex_array() = default;
+            template <typename T, typename... Ts> requires any_vertex_type<T>
+            void add_vertices(T vertex, Ts... rest);
 
         private:
-            /*
-            uint8_t pos_components = 0;
-            uint8_t uv_components = 0;
-            */
-            buffer data;
+            template <typename T>
+            vertex_batch& find_suitable_batch() noexcept;
+
+            template <typename T, typename... Ts> requires any_vertex_type<T>
+            void add_to_batch(char* add_ptr, const vertex_batch& info, T vertex, Ts... rest) noexcept;
+
+            std::vector<vertex_batch> batches;
     };
+
+    template <typename T, typename... Ts> requires any_vertex_type<T>
+    void vertex_array::add_vertices(T vertex, Ts... rest)
+    {
+        vertex_batch& batch = find_suitable_batch<T>();
+        char* ptr = reinterpret_cast<char*>(&batch.data[batch.data.size()]);
+        batch.data.resize(batch.data.size() + (sizeof...(rest) + 1) * batch.vertex_size);
+
+        add_to_batch(ptr, batch, std::forward<T>(vertex), rest...);
+    }
+
+    template <typename T, typename... Ts> requires any_vertex_type<T>
+    void vertex_array::add_to_batch(char* append_ptr, const vertex_batch& info, T vertex, Ts... rest) noexcept
+    {
+        vertex.serialise_to(append_ptr, info);
+        append_ptr += info.vertex_size;
+        if constexpr (sizeof...(rest) > 0)
+            add_to_batch(append_ptr, info, std::move(rest...));
+    }
+
+    template <typename T>
+    vertex_batch& vertex_array::find_suitable_batch() noexcept
+    {
+        for (auto& batch : batches)
+            if (T::is_batch_suitable(batch))
+                return batch;
+
+        batches.emplace_back(T::create_suitable_batch());
+        return batches.back();
+    }
 }
 
 #endif

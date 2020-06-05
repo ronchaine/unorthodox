@@ -1,7 +1,6 @@
 #define UNORTHODOX_ENABLE_MACROS
 
 #include <unorthodox/graphics/canvas.hpp>
-#include <unorthodox/graphics/renderer.hpp>
 
 #include <cppevents/window.hpp>
 #include <cppevents/input.hpp>
@@ -14,7 +13,7 @@
 
 namespace cppevents::detail { cppevents::event create_sdl_window_event(native_source_type fd); }
 
-namespace unorthodox
+namespace unorthodox::graphics
 {
     sdl2_window::sdl2_window() noexcept
     {
@@ -49,14 +48,11 @@ namespace unorthodox
         return *this;
     }
 
-    void sdl2_window::create(const unorthodox::window_configuration conf)
+    void sdl2_window::create(const window_configuration conf)
     {
         (void)conf;
         //TODO: setup by conf params
-//        renderer = std::make_unique<opengl_renderer>(conf);
 //        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-
-//        fmt::print(stderr, "creating window of size {}x{}, title: {}\n", size.w, size.h, title);
 
         window = SDL_CreateWindow(title.c_str(),
                                   0,
@@ -76,9 +72,6 @@ namespace unorthodox
 
 
 /*
-        glClearColor(0,0,0,1);
-        glClear(GL_COLOR_BUFFER_BIT);
-
         fmt::print(stderr, "libepoxy + SDL init, GL version: {}\n", epoxy_gl_version());
 */
         present();
@@ -96,14 +89,10 @@ namespace unorthodox
 
     void sdl2_window::redraw() noexcept
     {
-        dirty = true;
     }
 
     void sdl2_window::present() noexcept
     {
-        if (!dirty)
-            return;
-
         /*
         if (renderer == nullptr)
         {
@@ -113,7 +102,6 @@ namespace unorthodox
         renderer->flush();
         */
         SDL_GL_SwapWindow(window);
-        dirty = false;
     }
 
     void sdl2_window::wait()

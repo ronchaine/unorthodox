@@ -4,11 +4,12 @@
 #include <unorthodox/graphics/canvas.hpp>
 #include <cppevents/sdl2.hpp>
 
-namespace unorthodox
+namespace unorthodox::graphics
 {
     class sdl2_window
     {
         public:
+            constexpr static bool supports_opengl = true;
             constexpr static bool enable_cppevents = true;
 
             sdl2_window() noexcept;
@@ -17,7 +18,7 @@ namespace unorthodox
             sdl2_window& set_title(std::string);
             sdl2_window& set_size(unorthodox::size_2D);
 
-            void create(const unorthodox::window_configuration = unorthodox::window_configuration{});
+            void create(const window_configuration = window_configuration{});
 
             void redraw() noexcept;
             void present() noexcept;
@@ -44,9 +45,9 @@ namespace unorthodox
 
 namespace cppevents
 {
-    template <typename Source, ::unorthodox::suitable_canvas T>
+    template <typename Source, ::unorthodox::graphics::suitable_canvas T>
         requires std::is_same_v<Source, window> &&
-                 std::is_convertible_v<T, unorthodox::sdl2_window>
+                 std::is_convertible_v<T, unorthodox::graphics::sdl2_window>
     error_code add_source(T& src, event_queue& q = default_queue)
     {
         src.connect_events(q, 0);

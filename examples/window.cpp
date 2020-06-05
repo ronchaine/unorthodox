@@ -1,31 +1,57 @@
 #include <unorthodox/geometry/shapes.hpp>
 #include <unorthodox/graphics/canvas.hpp>
+#include <unorthodox/graphics/vertex.hpp>
 
 #include "gfx/sdl2-window.hpp"
 #include "gfx/opengl-es-renderer.hpp"
 
-static uint32_t new_color()
+namespace unorthodox::geometry
 {
-    static uint32_t counter = 0;
-    counter++;
+    // constexpr this when possible
+    template <typename T>
+    graphics::vertex_array paint(const T&, colour) requires geometry::trivially_triangularizable<T>
+    {
 
-    return counter % 2 == 0 ? 0xffffffff : 0x00ff00ff;
+        //using vertex_type = unorthodox::graphics::vertex<unorthodox::graphics::vertex_components::position<typename T::value_type, T::dimension>>;
+
+        using vertex_type = unorthodox::graphics::vertex<
+            unorthodox::graphics::vertex_components::position<typename T::value_type, T::dimension>,
+            unorthodox::graphics::vertex_components::texture_coordinates<1>
+        >;
+
+        graphics::vertex_array rval;
+
+        vertex_type v0;
+        v0.x = 1;
+        v0.y = 2;
+
+        rval.add_vertices(v0);
+//        auto batch = vertex_batch;
+
+        return rval;
+    }
 }
 
 int main()
 {
     // Create video output, we want to draw to an SDL2 window, and use OpenGL to do that
-    unorthodox::canvas<unorthodox::sdl2_window, unorthodox::opengl_renderer> window;
+    unorthodox::graphics::canvas<unorthodox::graphics::sdl2_window, unorthodox::graphics::opengl_renderer> window;
 
     window.set_title("Unorthodox graphics test")
           .set_size({1280, 720})
           .create();
 
     // describe a shape that can be used in rendering.  By default viewport coordinates equal pixel coordinates
-//    unorthodox::shapes::triangle triangle({100,200}, {200, 200}, {150, 100});
+    unorthodox::geometry::triangle triangle({100,200}, {200, 200}, {150, 100});
+
+    // clear back buffer to colour specified
+    window.clear(0xFF00FFFF);
 
     // queue triangle to be drawn
-//    window << paint(triangle, 0xffffffff);
+    paint(triangle, 0xffffffff);
+
+    //window << paint(unorthodox::Something{}, 0xffffffff);
+
 //    window << paint(triangle, texture, 0xffffffff);
 
 //    Easy plots!
@@ -37,12 +63,8 @@ int main()
 
     /*
     window.clear(0x300000a0);
-    window.present();
     */
 /*
-    cppevents::add_source<cppevents::window>(window);
-
-    bool redraw = true;
 
     cppevents::on_event<cppevents::mouse_button>([&](cppevents::event& raw){
         auto ev = event_cast<cppevents::mouse_button>(raw);
@@ -51,32 +73,21 @@ int main()
             std::cout << "pressed ";
         else
             std::cout << "released ";
-
-        std::cout << " (" << ev.click_count << ") -- redraw true\n";
-        redraw = true;
     });
 */
+    window.present();
+
+    cppevents::add_source<cppevents::window>(window);
+
     while (window.is_open())
     {
-        // clear back buffer to colour specified, no-op if not using a renderer
-//        window.clear(new_color());
-
-
         // block until an event is received
         cppevents::wait();
 
-        // go through events, print their debug info
-        /*
-        for (auto& ev : window.events())
-            ev.print_debug();
-        */
+        window.clear(0xFF00FFFF);
 
         // flush window drawing operations and swap back and front buffers
         // (show what has been queued to be drawn)
-        window.clear(new_color());
-        window.redraw(); 
-//        std::cout << "!\n";
-
         window.present();
     }
 }

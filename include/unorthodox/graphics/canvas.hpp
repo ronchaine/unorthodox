@@ -3,7 +3,7 @@
 
 #include "../basic_types.hpp"
 
-namespace unorthodox
+namespace unorthodox::graphics
 {
     struct window_configuration{};
 
@@ -18,7 +18,10 @@ namespace unorthodox
     };
 
     template <suitable_canvas Target, suitable_renderer Renderer>
-    class canvas : public Target, public Renderer {};
+    class canvas : public Target, public Renderer {
+        static_assert(not Renderer::requires_opengl_support or Target::supports_opengl,
+                "Renderer requires OpenGL but target does not support it");
+    };
 
 }
 
