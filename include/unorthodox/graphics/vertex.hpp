@@ -160,27 +160,32 @@ namespace unorthodox::graphics
             std::cout << "   count: " << layout_array_sizes[i] << "\n";
         }
 
-        /*
-        vertex_batch() = default;
-
-        uint8_t vertex_size;
-
-        std::vector<vertex_component_layout> component_layouts;
-        std::vector<std::byte> data;
-        */
-
-        // Require there are same amount of components and the same vertex size
-        if (batch.vertex_size != sizeof(vertex<Other_Components...>))
+        // Require the vertex size to be at least large enough to hold
+        // the data (we can pad some of the data)
+        if (batch.vertex_size >= sizeof(vertex<Other_Components...>))
                 return false;
+        // Require there are same amount of components
         if (batch.component_layouts.size() != sizeof...(Other_Components))
                 return false;
 
-        for (constexpr size_t i = 0; i < sizeof...(Other_Components); ++i)
+        for (size_t i = 0; i < sizeof...(Other_Components); ++i)
         {
-            using op = std::conditional_t<component_allows_padding[i], std::less<uint16_t>, std::not_equal_to<uint16_t>>;
-//            if (layout_components[i] != 
-        }
+            if (layout_component_sizes[i] != batch.component_layouts[i].component_size)
+                return false;
+            if (layout_array_sizes[i] != batch.component_layouts[i].count)
+                return false;
 
+            if (component_allows_padding[i])
+            {
+                if (layout_components[i] <= batch.component_layouts[i].components)
+                    return false;
+            }
+            else
+            {
+                if (layout_components[i] != batch.component_layouts[i].components)
+                    return false;
+            }
+        }
         return true;
     }
 
