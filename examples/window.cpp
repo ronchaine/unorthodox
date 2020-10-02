@@ -42,13 +42,13 @@ int main()
           .create();
 
     // describe a shape that can be used in rendering.  By default viewport coordinates equal pixel coordinates
-    unorthodox::geometry::triangle triangle({100,200}, {200, 200}, {150, 100});
+    // unorthodox::geometry::triangle triangle({100,200}, {200, 200}, {150, 100});
 
     // clear back buffer to colour specified
     window.clear(0xFF00FFFF);
 
     // queue triangle to be drawn
-    paint(triangle, 0xffffffff);
+    // paint(triangle, 0xffffffff);
 
     //window << paint(unorthodox::Something{}, 0xffffffff);
 
@@ -77,7 +77,7 @@ int main()
 */
     window.present();
 
-    cppevents::add_source<cppevents::window>(window);
+    cppevents::add_source<cppevents::window_event>(window);
 
     while (window.is_open())
     {

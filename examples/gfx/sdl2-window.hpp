@@ -46,7 +46,7 @@ namespace unorthodox::graphics
 namespace cppevents
 {
     template <typename Source, ::unorthodox::graphics::suitable_canvas T>
-        requires std::is_same_v<Source, window> &&
+        requires std::is_same_v<Source, window_event> &&
                  std::is_convertible_v<T, unorthodox::graphics::sdl2_window>
     error_code add_source(T& src, event_queue& q = default_queue)
     {
