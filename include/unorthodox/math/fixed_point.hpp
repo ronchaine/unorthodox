@@ -209,10 +209,10 @@ namespace unorthodox
             { return rhs *= lhs; }
             template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator * (const T lhs, const fixed_point<IBits,FBits,Sign> rhs) noexcept
             { return rhs * lhs; }
-            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator /=(const T lhs, fixed_point<IBits,FBits,Sign> rhs) noexcept
-            { return rhs /= lhs; }
-            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator / (const T lhs, const fixed_point<IBits,FBits,Sign> rhs) noexcept
-            { return rhs / lhs; }
+
+            // division isn't commutative, so screw this
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator /=(const T lhs, fixed_point<IBits,FBits,Sign> rhs) noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator / (const T lhs, const fixed_point<IBits,FBits,Sign> rhs) noexcept;
 
             constexpr friend fixed_point operator-(fixed_point fp) noexcept { fp.value = -fp.value; return fp; }
 
