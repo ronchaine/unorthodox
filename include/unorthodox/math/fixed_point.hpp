@@ -133,6 +133,12 @@ namespace unorthodox
 
         template <typename T>
         using integer_overflow_type = typename integer_overflow_struct<T>::type;
+
+        template <typename FixedType, typename OtherType>
+        struct fp_promoted_type
+        {
+            using type = FixedType;
+        };
     }
 
     template <unsigned int IntegerBits, unsigned int FractionBits, bool Signed>
@@ -145,6 +151,9 @@ namespace unorthodox
             using underlying_type = typename std::conditional<Signed,
                                     typename smallest_signed_integer_type<(bytesize_for_bits<IntegerBits + FractionBits>())>::type,
                                     typename smallest_unsigned_integer_type<(bytesize_for_bits<IntegerBits + FractionBits>())>::type>::type;
+
+            template <typename T>
+            using promoted_type   = typename detail::fp_promoted_type<fixed_point, T>::type;
 
             static_assert(not std::is_same<underlying_type, void>::value);
 
@@ -167,15 +176,7 @@ namespace unorthodox
             constexpr operator fixed_point<Int,Frac,Sign>() const noexcept;
 
             // comparison
-            // std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
-
-            // TODO: Remove when C++20 comes in favour of above
-            constexpr bool operator< (const fixed_point& rhs) const { return value <  rhs.value; }
-            constexpr bool operator> (const fixed_point& rhs) const { return value >  rhs.value; }
-            constexpr bool operator<=(const fixed_point& rhs) const { return value <= rhs.value; }
-            constexpr bool operator>=(const fixed_point& rhs) const { return value >= rhs.value; }
-            constexpr bool operator==(const fixed_point& rhs) const { return value == rhs.value; }
-            constexpr bool operator!=(const fixed_point& rhs) const { return value != rhs.value; }
+            std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
 
             /*
              * Assignment
