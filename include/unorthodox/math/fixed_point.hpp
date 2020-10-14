@@ -170,12 +170,12 @@ namespace unorthodox
             // std::strong_ordering operator<=>(const fixed_point& rhs) const = default;
 
             // TODO: Remove when C++20 comes in favour of above
-            bool operator< (const fixed_point& rhs) const { return value <  rhs.value; }
-            bool operator> (const fixed_point& rhs) const { return value >  rhs.value; }
-            bool operator<=(const fixed_point& rhs) const { return value <= rhs.value; }
-            bool operator>=(const fixed_point& rhs) const { return value >= rhs.value; }
-            bool operator==(const fixed_point& rhs) const { return value == rhs.value; }
-            bool operator!=(const fixed_point& rhs) const { return value != rhs.value; }
+            constexpr bool operator< (const fixed_point& rhs) const { return value <  rhs.value; }
+            constexpr bool operator> (const fixed_point& rhs) const { return value >  rhs.value; }
+            constexpr bool operator<=(const fixed_point& rhs) const { return value <= rhs.value; }
+            constexpr bool operator>=(const fixed_point& rhs) const { return value >= rhs.value; }
+            constexpr bool operator==(const fixed_point& rhs) const { return value == rhs.value; }
+            constexpr bool operator!=(const fixed_point& rhs) const { return value != rhs.value; }
 
             /*
              * Assignment
@@ -185,17 +185,36 @@ namespace unorthodox
             /*
              * Arithmetic operations
              */
-            template <typename T> constexpr fixed_point& operator +=(const T rhs) noexcept;
-            template <typename T> constexpr fixed_point operator +(const T rhs) const noexcept;
-            template <typename T> constexpr fixed_point& operator -=(const T rhs) noexcept;
-            template <typename T> constexpr fixed_point operator -(const T rhs) const noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator +=(fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator + (const fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator -=(fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator - (const fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
 
-            template <typename T> constexpr fixed_point& operator *=(const T rhs) noexcept;
-            template <typename T> constexpr fixed_point operator *(const T rhs) const noexcept;
-            template <typename T> constexpr fixed_point& operator /=(const T rhs) noexcept;
-            template <typename T> constexpr fixed_point operator /(const T rhs) const noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator *=(fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator * (const fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator /=(fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator / (const fixed_point<IBits,FBits,Sign> lhs, const T rhs) noexcept;
 
-            friend fixed_point operator-(fixed_point fp) noexcept { fp.value = -fp.value; return fp; }
+            // commutative versions
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator +=(const T lhs, fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs += lhs; }
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator + (const T lhs, const fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs + lhs; }
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator -=(const T lhs, fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs -= lhs; }
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator - (const T lhs, const fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs - lhs; }
+
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator *=(const T lhs, fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs *= lhs; }
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator * (const T lhs, const fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs * lhs; }
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point& operator /=(const T lhs, fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs /= lhs; }
+            template <unsigned int IBits, unsigned int FBits, bool Sign, typename T> constexpr friend fixed_point  operator / (const T lhs, const fixed_point<IBits,FBits,Sign> rhs) noexcept
+            { return rhs / lhs; }
+
+            constexpr friend fixed_point operator-(fixed_point fp) noexcept { fp.value = -fp.value; return fp; }
 
             constexpr fixed_point& operator++() noexcept { ++value; return *this; }
             constexpr fixed_point operator++(int) noexcept { fixed_point tmp = *this; ++value; return tmp; }
@@ -281,126 +300,130 @@ namespace unorthodox
     }
 
     // Addition / substraction
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign>& fixed_point<Int,Frac,Sign>::operator+=(const T rhs) noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign>& operator+=(fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
         if constexpr(std::is_integral<T>::value)
-            value += (rhs << fractional_bits);
+            lhs.value += (rhs << lhs.fractional_bits);
         else if constexpr(std::is_floating_point<T>::value)
-            value += rhs * (1ull << fractional_bits);
+            lhs.value += rhs * (1ull << lhs.fractional_bits);
         else if constexpr(std::is_same<typename std::decay<T>::type,
                                        typename std::decay<fixed_point<Int,Frac,Sign>>::type>::value)
-            value += rhs.value;
+            lhs.value += rhs.value;
         else
-            *this += static_cast<fixed_point<Int,Frac,Sign>>(rhs);
-        return *this;
+            lhs += static_cast<fixed_point<Int,Frac,Sign>>(rhs);
+        return lhs;
     }
 
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign>& fixed_point<Int,Frac,Sign>::operator-=(const T rhs) noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign>& operator-=(fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
         if constexpr(std::is_integral<T>::value)
-            value -= (rhs << fractional_bits);
+            lhs.value -= (rhs << lhs.fractional_bits);
         else if constexpr(std::is_floating_point<T>::value)
-            value -= rhs * (1ull << fractional_bits);
+            lhs.value -= rhs * (1ull << lhs.fractional_bits);
         else if constexpr(std::is_same<typename std::decay<T>::type,
                                        typename std::decay<fixed_point<Int,Frac,Sign>>::type>::value)
-            value -= rhs.value;
+            lhs.value -= rhs.value;
         else
-            *this -= static_cast<fixed_point<Int,Frac,Sign>>(rhs);
-        return *this;
+            lhs -= static_cast<fixed_point<Int,Frac,Sign>>(rhs);
+        return lhs;
     }
 
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::operator+(const T rhs) const noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign> operator+(const fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
-        return fixed_point<Int,Frac,Sign>(*this) += rhs;
+        return fixed_point<Int,Frac,Sign>(lhs) += rhs;
     }
 
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::operator-(const T rhs) const noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign> operator-(const fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
-        return fixed_point<Int,Frac,Sign>(*this) -= rhs;
+        return fixed_point<Int,Frac,Sign>(lhs) -= rhs;
     }
 
     // Multiplication / Division
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign>& fixed_point<Int,Frac,Sign>::operator*=(const T rhs) noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign>& operator*=(fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
         if constexpr (std::is_integral<T>::value)
-            value *= rhs;
+            lhs.value *= rhs;
         else if constexpr (std::is_floating_point<T>::value)
-            value *= rhs;
+            lhs.value *= rhs;
         else if constexpr (is_fixed_point<T>::value)
         {
+            using underlying_type = typename fixed_point<Int,Frac,Sign>::underlying_type;
+
             // fast way, if we have overflow type available
-            if constexpr((fractional_bits == T::fractional_bits)
+            if constexpr((lhs.fractional_bits == T::fractional_bits)
                       && (std::is_same<underlying_type, typename T::underlying_type>::value)
                       && (!std::is_same<detail::integer_overflow_type<underlying_type>, void>::value))
             {
                 using overflow_type = detail::integer_overflow_type<underlying_type>;
-                overflow_type tval = static_cast<overflow_type>(value) * static_cast<overflow_type>(rhs.value);
-                tval >>= fractional_bits;
-                value = tval;
+                overflow_type tval = static_cast<overflow_type>(lhs.value) * static_cast<overflow_type>(rhs.value);
+                tval >>= lhs.fractional_bits;
+                lhs.value = tval;
             } else {
                 // slower, but works without overflow types
                 const underlying_type rv = static_cast<fixed_point<Int,Frac,Sign>>(rhs).value;
 
-                const underlying_type lhs_int = value >> fractional_bits;
-                const underlying_type lhs_frac = (value & ~mask_bits<underlying_type>(fractional_bits));
+                const underlying_type lhs_int = lhs.value >> lhs.fractional_bits;
+                const underlying_type lhs_frac = (lhs.value & ~mask_bits<underlying_type>(lhs.fractional_bits));
 
-                const underlying_type rhs_int = rv >> fractional_bits;
-                const underlying_type rhs_frac = (rv & ~mask_bits<underlying_type>(fractional_bits));
+                const underlying_type rhs_int = rv >> lhs.fractional_bits;
+                const underlying_type rhs_frac = (rv & ~mask_bits<underlying_type>(lhs.fractional_bits));
 
                 const underlying_type x1 = lhs_int * rhs_int;
                 const underlying_type x2 = lhs_int * rhs_frac;
                 const underlying_type x3 = lhs_frac * rhs_int;
                 const underlying_type x4 = lhs_frac * rhs_frac;
 
-                value = (x1 << fractional_bits) + (x2 + x3) + (x4 >> fractional_bits);
+                lhs.value = (x1 << lhs.fractional_bits) + (x2 + x3) + (x4 >> lhs.fractional_bits);
             }
         }
         else
-            *this *= static_cast<fixed_point<Int,Frac,Sign>>(rhs);
-        return *this;
+            lhs *= static_cast<fixed_point<Int,Frac,Sign>>(rhs);
+        return lhs;
     }
 
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::operator*(const T rhs) const noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign> operator*(fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
-        return (fixed_point<Int,Frac,Sign>(*this)) *= rhs;
+        return (fixed_point<Int,Frac,Sign>(lhs)) *= rhs;
     }
 
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign>& fixed_point<Int,Frac,Sign>::operator/=(const T rhs) noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign>& operator/=(fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
         if constexpr (std::is_integral<T>::value)
-            value /= rhs;
+            lhs.value /= rhs;
         else if constexpr (std::is_floating_point<T>::value)
-            value /= rhs;
+            lhs.value /= rhs;
         else if constexpr (is_fixed_point<T>::value)
         {
-            if constexpr((fractional_bits == T::fractional_bits)
+            using underlying_type = typename fixed_point<Int,Frac,Sign>::underlying_type;
+
+            if constexpr((lhs.fractional_bits == T::fractional_bits)
                     && (std::is_same<underlying_type, typename T::underlying_type>::value)
                     && (!std::is_same<detail::integer_overflow_type<underlying_type>, void>::value))
             {
                 using overflow_type = detail::integer_overflow_type<underlying_type>;
-                overflow_type dividend = static_cast<overflow_type>(value);
+                overflow_type dividend = static_cast<overflow_type>(lhs.value);
                 const overflow_type divisor = static_cast<overflow_type>(rhs.value);
-                dividend <<= fractional_bits;
-                value = dividend / divisor;
+                dividend <<= lhs.fractional_bits;
+                lhs.value = dividend / divisor;
             }
         }
         else
-            *this /= static_cast<fixed_point<Int,Frac,Sign>>(rhs);
+            lhs /= static_cast<fixed_point<Int,Frac,Sign>>(rhs);
 
-        return *this;
+        return lhs;
     }
 
-    template <uint32_t Int, uint32_t Frac, bool Sign> template <typename T>
-    constexpr fixed_point<Int,Frac,Sign> fixed_point<Int,Frac,Sign>::operator/(const T rhs) const noexcept
+    template <uint32_t Int, uint32_t Frac, bool Sign, typename T>
+    constexpr fixed_point<Int,Frac,Sign> operator/(fixed_point<Int,Frac,Sign> lhs, const T rhs) noexcept
     {
-        return (fixed_point<Int,Frac,Sign>(*this)) /= rhs;
+        return (fixed_point<Int,Frac,Sign>(lhs)) /= rhs;
     }
 
     template <uint32_t Int, uint32_t Frac, bool Sign>
