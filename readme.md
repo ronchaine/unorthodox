@@ -1,3 +1,12 @@
+Currently going through some refactoring
+========================================
+Entire unorthodox is currently under some refactoring, so it is easier to
+pick & choose parts without pulling in all of it.
+
+Also, investigation undergoing on some of the base data structures and if
+those should be some basic implementations of those.  (e.g. to be used in
+a freestanding environment)
+
 work in progress C++20 utility library
 ======================================
 Unorthodox (as opposed to standard) is stuff that I often need, but have no good
